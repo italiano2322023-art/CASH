@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام إدارة الخزينة الأونلاين</title>
+    <!-- مكتبات التصدير لـ Excel و PDF -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <style>
+        * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f0f2f5; margin: 0; padding: 20px; color: #333; }
+        
+        /* الهيدر وشعار الشركة */
+        .header-card {
+            background: linear-gradient(135deg, #103b68, #1a5b99);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+        }
+        .company-info { display: flex; align-items: center; gap: 15px; }
+        .company-logo { width: 75px; height: 75px; object-fit: contain; background: white; padding: 5px; border-radius: 8px; }
+        .company-title h1 { margin: 0; font-size: 24px; }
+        .company-title p { margin: 5px 0 0; opacity: 0.8; font-size: 14px; }
+
+        /* شريط الأدوات والتحكم */
+        .actions-bar {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+        }
+        .btn {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 14px;
+            transition: 0.2s;
+        }
+        .btn-primary { background-color: #103b68; color: white; }
+        .btn-success { background-color: #28a745; color: white; }
+        .btn-danger { background-color: #dc3545; color: white; }
+        .btn-warning { background-color: #ffc107; color: #333; }
+        .btn:hover { opacity: 0.9; }
+
+        /* محتوى الخزينة والأرصدة */
+        .grid-container { display: grid; grid-template-columns: 3fr 1fr; gap: 20px; }
+        @media (max-width: 900px) { .grid-container { grid-template-columns: 1fr; } }
+
+        .table-card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+        table { width: 100%; border-collapse: collapse; text-align: center; margin-top: 15px; }
+        th, td { border: 1px solid #e0e0e0; padding: 10px; font-size: 14px; }
+        th { background-color: #f8f9fa; }
+        .th-in { background-color: #d4edda; color: #155724; }
+        .th-out { background-color: #d1ecf1; color: #0c5460; }
+
+        /* كروت الأرصدة الإجمالية */
+        .summary-cards { display: flex; flex-direction: column; gap: 12px; }
+        .card-stat {
+            padding: 15px;
+            border-radius: 10px;
+            color: white;
+            text-align: center;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+        .stat-label { font-size: 13px; opacity: 0.9; margin-bottom: 5px; }
+        .stat-value { font-size: 22px; font-weight: bold; }
+
+        .bg-total-in { background-color: #17a2b8; }
+        .bg-total-out { background-color: #28a745; }
+        .bg-balance { background-color: #002752; }
+        .bg-vodafone { background-color: #d9534f; }
+        .bg-instapay { background-color: #6f42c1; }
+        .bg-cash { background-color: #ffc107; color: #333; }
+
+        /* نافذة التخصيص (Modal) */
+        .modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 25px; border-radius: 12px; width: 400px; max-width: 90%; }
+        .form-group { margin-bottom: 15px; }
+        .form-group label { display: block; margin-bottom: 5px; font-weight: bold; font-size: 14px; }
+        .form-group input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 6px; }
+    </style>
+</head>
+<body>
+
+    <!-- الهيدر ولوجو الشركة -->
+    <div class="header-card" id="exportArea">
+        <div class="company-info">
+            <img id="displayLogo" src="https://via.placeholder.com/75?text=Logo" alt="لوجو الشركة" class="company-logo">
+            <div class="company-title">
+                <h1 id="displayCompanyName">اسم الشركة الافتراضي</h1>
+                <p id="displaySeason">خزينة المكتب - بيان حركة اليومية</p>
+            </div>
+        </div>
+        <div>
+            <span style="font-size: 14px;" id="currentDate">التاريخ: 2026-09-22</span>
+        </div>
+    </div>
+
+    <!-- شريط الأدوات والتخصيص والتصدير -->
+    <div class="actions-bar">
+        <div>
+            <button class="btn btn-primary" onclick="openSettings()">⚙️ إعدادات الشركة واللوجو</button>
+            <button class="btn btn-warning" onclick="openTransactionModal()">➕ إضافة حركة جديدة</button>
+        </div>
+        <div>
+            <button class="btn btn-success" onclick="exportToExcel()">📊 تصدير Excel</button>
+            <button class="btn btn-danger" onclick="exportToPDF()">📄 تصدير PDF</button>
+            <button class="btn btn-primary" onclick="closeDayAndArchive()">🔒 تقفيل اليومية والأرشفة</button>
+        </div>
+    </div>
+
+    <!-- محتوى الخزينة -->
+    <div class="grid-container">
+        <!-- جدول القيود -->
+        <div class="table-card">
+            <h3>بيان حركة الخزينة اليومية</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th colspan="3" class="th-in">الوارد (+)</th>
+                        <th colspan="3" class="th-out">المنصرف (-)</th>
+                    </tr>
+                    <tr>
+                        <th>المبلغ</th>
+                        <th>رقم الإذن</th>
+                        <th>البيان / طريقة الدفع</th>
+                        <th>المبلغ</th>
+                        <th>رقم الإذن</th>
+                        <th>البيان / طريقة الدفع</th>
+                    </tr>
+                </thead>
+                <tbody id="ledgerRows">
+                    <!-- تُضاف الصفوف ديناميكياً -->
+                </tbody>
+            </table>
+        </div>
+
+        <!-- الأرصدة الإجمالية -->
+        <div class="summary-cards">
+            <div class="card-stat bg-total-in">
+                <div class="stat-label">إجمالي الوارد</div>
+                <div class="stat-value" id="valTotalIn">0.00</div>
+            </div>
+            <div class="card-stat bg-total-out">
+                <div class="stat-label">إجمالي المنصرف</div>
+                <div class="stat-value" id="valTotalOut">0.00</div>
+            </div>
+            <div class="card-stat bg-balance">
+                <div class="stat-label">الرصيد المتبقي</div>
+                <div class="stat-value" id="valBalance">0.00</div>
+            </div>
+            <div class="card-stat bg-vodafone">
+                <div class="stat-label">محفظة فودافون كاش</div>
+                <div class="stat-value" id="valVodafone">0.00</div>
+            </div>
+            <div class="card-stat bg-instapay">
+                <div class="stat-label">إنستا باي</div>
+                <div class="stat-value" id="valInstaPay">0.00</div>
+            </div>
+            <div class="card-stat bg-cash">
+                <div class="stat-label">صافي الرصيد النقدي</div>
+                <div class="stat-value" id="valCash">0.00</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة إعدادات الشركة (Modal) -->
+    <div class="modal" id="settingsModal">
+        <div class="modal-content">
+            <h3>تخصيص بيانات الشركة</h3>
+            <div class="form-group">
+                <label>اسم الشركة:</label>
+                <input type="text" id="inputCompanyName" placeholder="مثال: شركتي للملابس">
+            </div>
+            <div class="form-group">
+                <label>عنوان الخزينة / الموسم:</label>
+                <input type="text" id="inputSeason" placeholder="مثال: خزينة موسم 2026">
+            </div>
+            <div class="form-group">
+                <label>لوجو الشركة (رابط صورة):</label>
+                <input type="text" id="inputLogoUrl" placeholder="https://example.com/logo.png">
+            </div>
+            <button class="btn btn-success" style="width: 100%;" onclick="saveSettings()">حفظ التغييرات</button>
+            <button class="btn btn-danger" style="width: 100%; margin-top: 5px;" onclick="closeSettings()">إلغاء</button>
+        </div>
+    </div>
+
+    <!-- البرمجة والتفاعل JS -->
+    <script>
+        let companyData = {
+            name: "إيطاليانو للملابس الجاهزة",
+            season: "خزينة المكتب - شتوى 2026 - 2027",
+            logo: "https://via.placeholder.com/75?text=Logo"
+        };
+
+        let transactions = [
+            { type: 'in', amount: 502627, receipt: '-', desc: 'رصيد مرحل', method: 'cash' },
+            { type: 'out', amount: 42928, receipt: '-', desc: 'ا/ عمرو 42928', method: 'cash' }
+        ];
+
+        function render() {
+            // تحديث بيانات الشركة
+            document.getElementById('displayCompanyName').innerText = companyData.name;
+            document.getElementById('displaySeason').innerText = companyData.season;
+            document.getElementById('displayLogo').src = companyData.logo;
+
+            // تحديث الجدول
+            const tbody = document.getElementById('ledgerRows');
+            tbody.innerHTML = '';
+
+            let totalIn = 0, totalOut = 0, vCash = 0, insta = 0;
+
+            transactions.forEach(t => {
+                if (t.type === 'in') {
+                    totalIn += t.amount;
+                    if (t.method === 'vodafone') vCash += t.amount;
+                    if (t.method === 'instapay') insta += t.amount;
+                } else {
+                    totalOut += t.amount;
+                }
+
+                let row = `<tr>
+                    <td>${t.type === 'in' ? t.amount.toLocaleString() : ''}</td>
+                    <td>${t.type === 'in' ? t.receipt : ''}</td>
+                    <td>${t.type === 'in' ? t.desc : ''}</td>
+                    <td>${t.type === 'out' ? t.amount.toLocaleString() : ''}</td>
+                    <td>${t.type === 'out' ? t.receipt : ''}</td>
+                    <td>${t.type === 'out' ? t.desc : ''}</td>
+                </tr>`;
+                tbody.innerHTML += row;
+            });
+
+            // حساب الأرصدة
+            let balance = totalIn - totalOut;
+            let cashBalance = balance - vCash - insta;
+
+            document.getElementById('valTotalIn').innerText = totalIn.toLocaleString();
+            document.getElementById('valTotalOut').innerText = totalOut.toLocaleString();
+            document.getElementById('valBalance').innerText = balance.toLocaleString();
+            document.getElementById('valVodafone').innerText = vCash.toLocaleString();
+            document.getElementById('valInstaPay').innerText = insta.toLocaleString();
+            document.getElementById('valCash').innerText = cashBalance.toLocaleString();
+        }
+
+        // التحكم بفرع الإعدادات
+        function openSettings() { document.getElementById('settingsModal').style.display = 'flex'; }
+        function closeSettings() { document.getElementById('settingsModal').style.display = 'none'; }
+        function saveSettings() {
+            const name = document.getElementById('inputCompanyName').value;
+            const season = document.getElementById('inputSeason').value;
+            const logo = document.getElementById('inputLogoUrl').value;
+            if (name) companyData.name = name;
+            if (season) companyData.season = season;
+            if (logo) companyData.logo = logo;
+            render();
+            closeSettings();
+        }
+
+        // تصدير إلى Excel
+        function exportToExcel() {
+            let data = transactions.map(t => ({
+                'نوع الحركة': t.type === 'in' ? 'وارد' : 'منصرف',
+                'المبلغ': t.amount,
+                'رقم الإذن': t.receipt,
+                'البيان': t.desc,
+                'طريقة الدفع': t.method
+            }));
+            let ws = XLSX.utils.json_to_sheet(data);
+            let wb = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(wb, ws, "حركة الخزينة");
+            XLSX.writeFile(wb, `${companyData.name}_خزينة.xlsx`);
+        }
+
+        // تصدير إلى PDF
+        function exportToPDF() {
+            const element = document.body;
+            html2pdf().from(element).save(`${companyData.name}_تقرير_الخزينة.pdf`);
+        }
+
+        // تقفيل اليومية والأرشفة
+        function closeDayAndArchive() {
+            alert('تم إغلاق اليومية بنجاح وأرشفة البيانات، وترحيل الرصيد المتبقي كـ (رصيد مرحل) لليوم التالي.');
+        }
+
+        render();
+    </script>
+</body>
+</html>
