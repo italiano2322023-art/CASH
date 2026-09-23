@@ -666,7 +666,6 @@
     <script>
         // -------------------------------------------------------------
         // 🔗 إعدادات الاتصال بقاعدة البيانات السحابية Supabase
-        // 🔑 قم باستبدال القيمة أدناه ببيانات مشروعك من Supabase
         // -------------------------------------------------------------
         const SUPABASE_URL = 'https://ugjtpdimyzaovtuknalt.supabase.co/rest/v1/';
         const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnanRwZGlteXphb3Z0dWtuYWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxODE4MTIsImV4cCI6MjEwNTc1NzgxMn0.6fy7uyqRDa3WTE19Ov01XtabBg_wfNhpHQZ6q-OATes';
@@ -693,6 +692,7 @@
 
             if (found) {
                 currentUser = found;
+                // إغلاق شاشة تسجيل الدخول نهائياً وإظهار لوحة التحكم
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (${currentUser.role === 'admin' ? 'مدير - صلاحية كاملة' : 'خزينة منفصلة'})`;
                 
@@ -812,7 +812,6 @@
             if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وحفظها سحابياً وتفريغ اليومية للغد؟`)) {
                 const todayTransactions = rawTransactions.filter(x => x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username));
 
-                // 1. أرشفة اليومية سحابياً
                 const archivePayload = {
                     date: currentDateStr,
                     user_name: currentUser.username,
@@ -821,10 +820,8 @@
                 };
                 await supabase.from('archive').insert([archivePayload]);
 
-                // 2. مسح الحركات اليومية للحصول على يومية فارغة
                 await supabase.from('transactions').delete().eq('created_at', currentDateStr);
 
-                // 3. ترحيل الأرصدة القادمة
                 let nextDate = new Date(currentDateStr);
                 nextDate.setDate(nextDate.getDate() + 1);
                 let nextDateStr = nextDate.toISOString().split('T')[0];
