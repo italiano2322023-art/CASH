@@ -132,21 +132,31 @@
 <body oncontextmenu="return false;">
 
     <!-- شاشة تسجيل الدخول -->
-    <div id="loginScreen" class="login-overlay">
-        <div class="card p-4 shadow-lg" style="width: 380px; border-radius: 12px;">
-            <h3 class="text-center mb-1 fw-bold text-primary"><i class="fa-solid fa-cloud-bolt me-2"></i>تسجيل الدخول</h3>
-            <div class="text-center mb-3"><span class="cloud-badge"><i class="fa-solid fa-shield-halved me-1"></i>مشفر وسحابي 100%</span></div>
-            <div class="mb-3">
-                <label class="form-label">اسم المستخدم</label>
-                <input type="text" id="loginUser" class="form-control" placeholder="اسم المستخدم" value="admin">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">كلمة المرور</label>
-                <input type="password" id="loginPass" class="form-control" placeholder="••••••••" value="123456">
-            </div>
-            <button class="btn btn-primary w-100 fw-bold py-2" onclick="handleLogin()">دخول للنظام السحابي</button>
+    <!-- مودال تسجيل الدخول -->
+<div id="loginModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6">
+        <div class="text-center mb-6">
+            <h2 class="text-2xl font-bold text-gray-800">تسجيل الدخول</h2>
+            <p class="text-sm text-gray-500">مشفر وسحابي 100%</p>
         </div>
+        
+        <form onsubmit="handleLogin(event)">
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-bold mb-2">اسم المستخدم</label>
+                <input type="text" id="username" value="admin" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 text-sm font-bold mb-2">كلمة المرور</label>
+                <input type="password" id="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
+            </div>
+            
+            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
+                دخول للنظام السحابي
+            </button>
+        </form>
     </div>
+</div>
 
     <!-- النافذة الرئيسية -->
     <div class="container-fluid py-3 px-4">
@@ -690,36 +700,29 @@
         document.getElementById('filterStartDate').value = todayDateStr;
         document.getElementById('filterEndDate').value = todayDateStr;
 
-        async function handleLogin() {
-            const u = document.getElementById('loginUser').value.trim();
-            const p = document.getElementById('loginPass').value.trim();
-            const found = users.find(x => x.username === u && x.pass === p);
+       // دالة التعامل مع تسجيل الدخول وإخفاء النافذة
+function handleLogin(event) {
+    event.preventDefault(); // منع إعادة تحميل الصفحة
+    
+    const user = document.getElementById('username').value;
+    const pass = document.getElementById('password').value;
 
-            if (found) {
-                currentUser = found;
-                // إخفاء نافذة الدخول تماماً فوراً
-                document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (${currentUser.role === 'admin' ? 'مدير - صلاحية كاملة' : 'خزينة منفصلة'})`;
-                
-                if (currentUser.role === 'admin') {
-                    document.getElementById('adminSafeSelectorGroup').style.display = 'block';
-                    document.getElementById('dashUserMgmtCard').style.display = 'block';
-                    document.getElementById('dashTrashCard').style.display = 'block';
-                    updateSafeSelector();
-                } else {
-                    document.getElementById('adminSafeSelectorGroup').style.display = 'none';
-                    document.getElementById('dashUserMgmtCard').style.display = 'none';
-                    document.getElementById('dashTrashCard').style.display = 'none';
-                }
-                
-                loadCompanySettings();
-                loadCategories();
-                renderUsersList();
-                showDashboardView();
-            } else {
-                alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة!');
-            }
+    // يمكنك تعديل بيانات الدخول الافتراضية هنا أو ربطها بقاعدة بيانات Supabase مستقبلاً
+    if (user.trim() !== "" && pass.trim() !== "") {
+        const loginModal = document.getElementById('loginModal');
+        
+        if (loginModal) {
+            // إخفاء نافذة تسجيل الدخول تماماً
+            loginModal.classList.add('hidden');
+            loginModal.classList.remove('flex');
+            
+            // رسالة ترحيبية أو فتح البيانات
+            console.لتسجيل_الدخول("تم تسجيل الدخول بنجاح، اللوحة تعمل الآن.");
         }
+    } else {
+        alert('الرجاء إدخال اسم المستخدم وكلمة المرور');
+    }
+}
 
         function logout() { location.reload(); }
 
