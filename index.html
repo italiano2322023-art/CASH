@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام الخزينة المتقدم multi-User Treasury</title>
+    <title>نظام إدارة الخزينة الإلكتروني</title>
     <!-- Bootstrap 5 RTL -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -13,27 +13,37 @@
             --vodafone-red: #d9534f;
             --instapay-navy: #000080;
         }
-        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        body { background-color: #f4f7f6; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        /* تنسيق ألوان خطوط طرق الدفع */
         .pay-vodafone { color: var(--vodafone-red) !important; font-weight: bold; }
         .pay-instapay { color: var(--instapay-navy) !important; font-weight: bold; }
         .pay-cash { color: #28a745 !important; font-weight: bold; }
 
         .stat-card {
-            border-radius: 10px;
-            padding: 15px;
+            border-radius: 8px;
+            padding: 12px;
             color: white;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
-            margin-bottom: 15px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.08);
+            margin-bottom: 10px;
         }
-        .bg-vodafone-card { background: #fff; border-right: 6px solid var(--vodafone-red); color: var(--vodafone-red); }
-        .bg-instapay-card { background: #fff; border-right: 6px solid var(--instapay-navy); color: var(--instapay-navy); }
+        .bg-vodafone-card { background: #fff; border-right: 5px solid var(--vodafone-red); color: var(--vodafone-red); }
+        .bg-instapay-card { background: #fff; border-right: 5px solid var(--instapay-navy); color: var(--instapay-navy); }
         
         .login-overlay {
             position: fixed; top: 0; left: 0; width: 100%; height: 100%;
             background: rgba(15, 23, 42, 0.95); z-index: 9999;
             display: flex; justify-content: center; align-items: center;
+        }
+        .entry-box {
+            background-color: #ffffff;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        @media print {
+            .no-print { display: none !important; }
+            .print-only { display: block !important; }
         }
     </style>
 </head>
@@ -59,12 +69,18 @@
     <div class="container-fluid py-3 px-4">
         
         <!-- الشريط العلوي -->
-        <div class="card bg-dark text-white p-3 mb-3 d-flex flex-row justify-content-between align-items-center rounded-3">
+        <div class="card bg-dark text-white p-3 mb-3 d-flex flex-row justify-content-between align-items-center rounded-3 no-print">
             <div>
                 <h4 class="m-0" id="headerCompanyName">mohamed for computer</h4>
                 <small class="text-muted" id="userInfoDisplay">المستخدم الحالي: -</small>
             </div>
             <div class="d-flex align-items-center gap-3">
+                <!-- عرض تاريخ اليوم -->
+                <div class="bg-secondary px-3 py-1 rounded text-white fw-bold">
+                    <i class="fa-regular fa-calendar-days me-1"></i>
+                    تاريخ اليوم: <span id="todayDateDisplay"></span>
+                </div>
+
                 <!-- اختيار الخزينة (للأدمن فقط) -->
                 <div id="adminSafeSelectorGroup" style="display: none;">
                     <label class="small text-warning me-1">عرض خزينة:</label>
@@ -76,56 +92,93 @@
             </div>
         </div>
 
-        <!-- أزرار الإجراءات -->
-        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+        <!-- شريط الأزرار والأيقونات المستقلة -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
             <div class="d-flex gap-2">
-                <button class="btn btn-warning fw-bold" data-bs-toggle="modal" data-bs-target="#addTxModal"><i class="fa-solid fa-plus-circle"></i> حركة جديدة</button>
-                <button class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#categoriesModal"><i class="fa-solid fa-tags"></i> إدارة البنود</button>
-                <button id="btnUsersMgmt" class="btn btn-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#usersMgmtModal" style="display:none;"><i class="fa-solid fa-users-gear"></i> إدارة المستخدمين</button>
+                <!-- أيقونة الفلترة المنفصلة -->
+                <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <i class="fa-solid fa-filter me-1"></i> الفلترة والبحث المتقدم
+                </button>
+                
+                <button class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#categoriesModal">
+                    <i class="fa-solid fa-tags me-1"></i> إدارة البنود
+                </button>
+                
+                <button id="btnUsersMgmt" class="btn btn-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#usersMgmtModal" style="display:none;">
+                    <i class="fa-solid fa-users-gear me-1"></i> إدارة المستخدمين
+                </button>
             </div>
-            <div>
-                <button class="btn btn-success fw-bold" onclick="exportExcel()"><i class="fa-solid fa-file-excel"></i> تصدير Excel</button>
+
+            <div class="d-flex gap-2">
+                <!-- أيقونة عرض شكل الخزينة قبل التصدير -->
+                <button class="btn btn-warning fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#previewModal" onclick="generatePreview()">
+                    <i class="fa-solid fa-eye me-1"></i> معاينة شكل الخزينة
+                </button>
+                <button class="btn btn-success fw-bold" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> طباعة / PDF</button>
             </div>
         </div>
 
-        <!-- شريط الفلترة المتقدمة -->
-        <div class="card p-3 mb-3 bg-white shadow-sm">
-            <h6 class="fw-bold mb-2"><i class="fa-solid fa-filter me-1 text-primary"></i> الفلترة والبحث المتقدم</h6>
-            <div class="row g-2">
-                <div class="col-md-3">
-                    <label class="small">من تاريخ:</label>
-                    <input type="date" id="filterFromDate" class="form-control form-control-sm" onchange="applyFilters()">
+        <!-- شاشة إدخال الحركات (قبض وصرف جنب بعض في نفس الشاشة) -->
+        <div class="entry-box shadow-sm no-print">
+            <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="fa-solid fa-pen-to-square me-1"></i> إدخال حركات الخزينة السريعة</h6>
+            <div class="row g-3">
+                <!-- قسم إدخال القبض (الوارد) -->
+                <div class="col-md-6 border-end">
+                    <div class="bg-success text-white p-1 px-2 rounded mb-2 fw-bold text-center">حركة قبض (+ وارد)</div>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <input type="number" id="inAmount" class="form-control form-control-sm" placeholder="المبلغ">
+                        </div>
+                        <div class="col-md-4">
+                            <select id="inCategory" class="form-select form-select-sm cat-select-target"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <select id="inMethod" class="form-select form-select-sm">
+                                <option value="cash">نقدي</option>
+                                <option value="vodafone">فودافون كاش</option>
+                                <option value="instapay">إنستا باي</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex gap-2">
+                            <input type="text" id="inNotes" class="form-control form-control-sm" placeholder="البيان / الملاحظات">
+                            <button class="btn btn-success btn-sm px-4 fw-bold text-nowrap" onclick="saveDirectTransaction('in')">إضافة قبض</button>
+                        </div>
+                    </div>
                 </div>
-                <div class="col-md-3">
-                    <label class="small">إلى تاريخ:</label>
-                    <input type="date" id="filterToDate" class="form-control form-control-sm" onchange="applyFilters()">
-                </div>
-                <div class="col-md-3">
-                    <label class="small">تصفية حسب البند:</label>
-                    <select id="filterCategory" class="form-select form-select-sm" onchange="applyFilters()">
-                        <option value="">كل البنود</option>
-                    </select>
-                </div>
-                <div class="col-md-3">
-                    <label class="small">طريقة الدفع:</label>
-                    <select id="filterMethod" class="form-select form-select-sm" onchange="applyFilters()">
-                        <option value="">الكل</option>
-                        <option value="cash">كاش (نقدي)</option>
-                        <option value="vodafone">فودافون كاش</option>
-                        <option value="instapay">إنستا باي</option>
-                    </select>
+
+                <!-- قسم إدخال الصرف (المنصرف) -->
+                <div class="col-md-6">
+                    <div class="bg-danger text-white p-1 px-2 rounded mb-2 fw-bold text-center">حركة صرف (- منصرف)</div>
+                    <div class="row g-2">
+                        <div class="col-md-4">
+                            <input type="number" id="outAmount" class="form-control form-control-sm" placeholder="المبلغ">
+                        </div>
+                        <div class="col-md-4">
+                            <select id="outCategory" class="form-select form-select-sm cat-select-target"></select>
+                        </div>
+                        <div class="col-md-4">
+                            <select id="outMethod" class="form-select form-select-sm">
+                                <option value="cash">نقدي</option>
+                                <option value="vodafone">فودافون كاش</option>
+                                <option value="instapay">إنستا باي</option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex gap-2">
+                            <input type="text" id="outNotes" class="form-control form-control-sm" placeholder="البيان / الملاحظات">
+                            <button class="btn btn-danger btn-sm px-4 fw-bold text-nowrap" onclick="saveDirectTransaction('out')">إضافة صرف</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
 
         <div class="row">
             <!-- الكروت الإحصائية -->
-            <div class="col-lg-3">
+            <div class="col-lg-3 no-print">
                 <div class="stat-card bg-info text-dark fw-bold"><div>إجمالي الوارد (+)</div><h3 id="statIn">0</h3></div>
                 <div class="stat-card bg-danger fw-bold"><div>إجمالي المنصرف (-)</div><h3 id="statOut">0</h3></div>
                 <div class="stat-card bg-dark fw-bold"><div>الرصيد المتبقي</div><h3 id="statBalance">0</h3></div>
                 
-                <!-- المحافظ بتنسيق الألوان المطلوب -->
                 <div class="stat-card bg-vodafone-card">
                     <div>محفظة فودافون كاش</div>
                     <h3 id="statVodafone" class="pay-vodafone">0</h3>
@@ -135,22 +188,22 @@
                     <h3 id="statInsta" class="pay-instapay">0</h3>
                 </div>
                 <div class="stat-card bg-warning text-dark fw-bold">
-                    <div>صافي الرصيد النقدي (كاش)</div>
+                    <div>صافي الرصيد النقدي</div>
                     <h3 id="statCash">0</h3>
                 </div>
             </div>
 
-            <!-- جدول الحركات -->
+            <!-- جدول الحركات الشامل -->
             <div class="col-lg-9">
                 <div class="card shadow-sm">
                     <div class="card-body p-0 table-responsive">
-                        <table class="table table-bordered table-hover text-center align-middle mb-0">
-                            <thead class="table-light">
+                        <table class="table table-bordered text-center align-middle mb-0">
+                            <thead>
                                 <tr>
-                                    <th colspan="4" class="table-success">الوارد (+)</th>
-                                    <th colspan="4" class="table-danger">المنصرف (-)</th>
+                                    <th colspan="4" class="table-success py-2">الوارد (+)</th>
+                                    <th colspan="4" class="table-danger py-2">المنصرف (-)</th>
                                 </tr>
-                                <tr>
+                                <tr class="table-light">
                                     <th>المبلغ</th>
                                     <th>البند</th>
                                     <th>طريقة الدفع</th>
@@ -162,7 +215,7 @@
                                 </tr>
                             </thead>
                             <tbody id="ledgerTableBody">
-                                <!-- الحركات بتنزل هنا -->
+                                <!-- البيانات تنزل هنا -->
                             </tbody>
                         </table>
                     </div>
@@ -171,33 +224,62 @@
         </div>
     </div>
 
-    <!-- مودال إضافة حركة -->
-    <div class="modal fade" id="addTxModal" tabindex="-1">
+    <!-- نافذة الفلترة والبحث المنفصلة (Modal) -->
+    <div class="modal fade" id="filterModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">إضافة حركة خزينة</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-filter me-2"></i>الفلترة والبحث المتقدم</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
                 <div class="modal-body">
-                    <div class="mb-2">
-                        <label>نوع الحركة:</label>
-                        <select id="txType" class="form-select"><option value="in">قبض / وارد (+)</option><option value="out">صرف / منصرف (-)</option></select>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">بحث عن يوم محدد (تاريخ الخزينة):</label>
+                        <input type="date" id="filterSpecificDate" class="form-control">
                     </div>
-                    <div class="mb-2"><label>المبلغ:</label><input type="number" id="txAmount" class="form-control" required></div>
-                    <div class="mb-2">
-                        <label>البند:</label>
-                        <select id="txCategory" class="form-select"></select>
-                    </div>
-                    <div class="mb-2">
-                        <label>طريقة الدفع:</label>
-                        <select id="txMethod" class="form-select">
-                            <option value="cash">نقداً (كاش)</option>
-                            <option value="vodafone">فودافون كاش</option>
-                            <option value="instapay">إنستا باي (InstaPay)</option>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">البحث عن بند معين:</label>
+                        <select id="filterCategory" class="form-select">
+                            <option value="">كل البنود</option>
                         </select>
                     </div>
-                    <div class="mb-2"><label>البيان / الملاحظات:</label><textarea id="txNotes" class="form-control" rows="2"></textarea></div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">طريقة الدفع:</label>
+                        <select id="filterMethod" class="form-select">
+                            <option value="">الكل</option>
+                            <option value="cash">نقدي</option>
+                            <option value="vodafone">فودافون كاش</option>
+                            <option value="instapay">إنستا باي</option>
+                        </select>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button class="btn btn-success w-100" onclick="saveTransaction()">حفظ الحركة</button>
+                    <button class="btn btn-secondary" onclick="resetFilters()">إعادة ضبط البحث</button>
+                    <button class="btn btn-primary fw-bold" data-bs-dismiss="modal" onclick="applyFilters()">بحث وتصفية</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة معاينة الخزينة قبل التصدير -->
+    <div class="modal fade" id="previewModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-file-invoice me-2"></i>معاينة شكل تقرير الخزينة قبل التصدير</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body p-4" id="previewPrintContent">
+                    <div class="text-center border-bottom pb-3 mb-3">
+                        <h2>mohamed for computer</h2>
+                        <h5>تقرير حركة الخزينة اليومية</h5>
+                        <p class="mb-0 text-muted">تاريخ المعاينة: <span id="previewDate"></span> | الخزينة: <span id="previewUser"></span></p>
+                    </div>
+                    <div id="previewTableContainer"></div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">إغلاق</button>
+                    <button class="btn btn-success" onclick="window.print()"><i class="fa-solid fa-print me-1"></i> طباعة فورية</button>
                 </div>
             </div>
         </div>
@@ -207,20 +289,19 @@
     <div class="modal fade" id="categoriesModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">تخليق وإدارة البنود</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header"><h5 class="modal-title">إدارة وتخليق البنود</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="input-group mb-3">
-                        <input type="text" id="newCatName" class="form-control" placeholder="اسم البند الجديد (مثلاً: إيجار)">
-                        <button class="btn btn-primary" onclick="addCategory()">إضافة بند</button>
+                        <input type="text" id="newCatName" class="form-control" placeholder="اسم البند الجديد">
+                        <button class="btn btn-primary" onclick="addCategory()">إضافة</button>
                     </div>
-                    <h6>البنود الحالية:</h6>
                     <ul id="categoriesList" class="list-group"></ul>
                 </div>
             </div>
         </div>
     </div>
 
-    <!-- مودال إدارة المستخدمين (الأدمن) -->
+    <!-- مودال إدارة المستخدمين -->
     <div class="modal fade" id="usersMgmtModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -230,13 +311,11 @@
                     <div class="mb-2"><input type="password" id="newUserPass" class="form-control" placeholder="كلمة المرور"></div>
                     <div class="mb-2">
                         <select id="newUserRole" class="form-select">
-                            <option value="user">مستخدم / أمين خزينة مستقلة</option>
+                            <option value="user">مستخدم / خزينة مستقلة</option>
                             <option value="admin">مدير (أدمن)</option>
                         </select>
                     </div>
-                    <button class="btn btn-success w-100 mb-3" onclick="addUser()">إضافة المستخدم</button>
-                    <h6>قائمة المستخدمين:</h6>
-                    <ul id="usersList" class="list-group"></ul>
+                    <button class="btn btn-success w-100" onclick="addUser()">إضافة مستخدم</button>
                 </div>
             </div>
         </div>
@@ -245,7 +324,7 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         const SUPABASE_URL = "https://hrcdvpkeybdegjsbnqvu.supabase.co";
-        const SUPABASE_KEY = "ضع_مفتاح_anon_public_هنا"; // استبدل بـ API Key الخاص بك
+        const SUPABASE_KEY = "ضع_مفتاح_anon_public_هنا";
         const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let currentUser = null;
@@ -256,7 +335,8 @@
             { username: "mohamed", pass: "123", role: "user" }
         ];
 
-        // تسجيل الدخول
+        document.getElementById('todayDateDisplay').innerText = new Date().toISOString().split('T')[0];
+
         function handleLogin() {
             const u = document.getElementById('loginUser').value;
             const p = document.getElementById('loginPass').value;
@@ -282,27 +362,26 @@
 
         function logout() { location.reload(); }
 
-        // تحضير قائمة الخزائن للأدمن
         function updateSafeSelector() {
             const select = document.getElementById('safeFilterSelect');
-            select.innerHTML = '<option value="ALL">كل الخزائن (شامل)</option>';
+            select.innerHTML = '<option value="ALL">كل الخزائن (الكل)</option>';
             users.forEach(u => {
                 select.innerHTML += `<option value="${u.username}">خزينة ${u.username}</option>`;
             });
         }
 
-        // إدارات البنود
         function loadCategories() {
             const list = document.getElementById('categoriesList');
-            const select = document.getElementById('txCategory');
+            const catTargets = document.querySelectorAll('.cat-select-target');
             const filterSelect = document.getElementById('filterCategory');
             
-            list.innerHTML = ''; select.innerHTML = '';
+            list.innerHTML = '';
+            catTargets.forEach(el => el.innerHTML = '');
             filterSelect.innerHTML = '<option value="">كل البنود</option>';
 
             categories.forEach(c => {
                 list.innerHTML += `<li class="list-group-item d-flex justify-content-between">${c}</li>`;
-                select.innerHTML += `<option value="${c}">${c}</option>`;
+                catTargets.forEach(el => el.innerHTML += `<option value="${c}">${c}</option>`);
                 filterSelect.innerHTML += `<option value="${c}">${c}</option>`;
             });
         }
@@ -316,7 +395,6 @@
             }
         }
 
-        // إضافة مستخدم
         function addUser() {
             const u = document.getElementById('newUsername').value;
             const p = document.getElementById('newUserPass').value;
@@ -330,15 +408,14 @@
             }
         }
 
-        // جلب وحفظ الحركات
-        async function saveTransaction() {
-            const type = document.getElementById('txType').value;
-            const amount = parseFloat(document.getElementById('txAmount').value);
-            const category = document.getElementById('txCategory').value;
-            const method = document.getElementById('txMethod').value;
-            const notes = document.getElementById('txNotes').value;
+        async function saveDirectTransaction(type) {
+            const prefix = type === 'in' ? 'in' : 'out';
+            const amount = parseFloat(document.getElementById(prefix + 'Amount').value);
+            const category = document.getElementById(prefix + 'Category').value;
+            const method = document.getElementById(prefix + 'Method').value;
+            const notes = document.getElementById(prefix + 'Notes').value;
 
-            if(!amount) return alert('ادخل مبلغ صحيح');
+            if(!amount || amount <= 0) return alert('يرجى إدخال مبلغ صحيح');
 
             const newTx = {
                 created_at: new Date().toISOString().split('T')[0],
@@ -347,7 +424,10 @@
             };
 
             await db.from('transactions').insert([newTx]);
-            bootstrap.Modal.getInstance(document.getElementById('addTxModal')).hide();
+            
+            document.getElementById(prefix + 'Amount').value = '';
+            document.getElementById(prefix + 'Notes').value = '';
+            
             loadTransactions();
         }
 
@@ -357,11 +437,16 @@
             applyFilters();
         }
 
-        // الفلترة الشاملة
+        function resetFilters() {
+            document.getElementById('filterSpecificDate').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterMethod').value = '';
+            applyFilters();
+        }
+
         function applyFilters() {
             let filtered = [...rawTransactions];
 
-            // 1. تصفية حسب الخزينة/المستخدم
             if (currentUser.role !== 'admin') {
                 filtered = filtered.filter(x => x.created_by === currentUser.username);
             } else {
@@ -369,17 +454,12 @@
                 if (selectedSafe !== 'ALL') filtered = filtered.filter(x => x.created_by === selectedSafe);
             }
 
-            // 2. فلتر التاريخ
-            const from = document.getElementById('filterFromDate').value;
-            const to = document.getElementById('filterToDate').value;
-            if (from) filtered = filtered.filter(x => x.created_at >= from);
-            if (to) filtered = filtered.filter(x => x.created_at <= to);
+            const specificDate = document.getElementById('filterSpecificDate').value;
+            if (specificDate) filtered = filtered.filter(x => x.created_at === specificDate);
 
-            // 3. فلتر البند
             const cat = document.getElementById('filterCategory').value;
             if (cat) filtered = filtered.filter(x => x.category === cat);
 
-            // 4. فلتر طريقة الدفع
             const method = document.getElementById('filterMethod').value;
             if (method) filtered = filtered.filter(x => x.payment_method === method);
 
@@ -396,9 +476,8 @@
                 const isVodafone = t.payment_method === 'vodafone';
                 const isInsta = t.payment_method === 'instapay';
                 
-                // إضافة الفلاسات اللفظية للخطوط بالألوان
                 let colorClass = isVodafone ? 'pay-vodafone' : (isInsta ? 'pay-instapay' : 'pay-cash');
-                let methodTitle = isVodafone ? 'فودافون كاش' : (isInsta ? 'إنستا باي' : 'كاش');
+                let methodTitle = isVodafone ? 'فودافون كاش' : (isInsta ? 'إنستا باي' : 'نقدي');
 
                 if (t.type === 'in') {
                     totalIn += Number(t.amount);
@@ -432,6 +511,14 @@
             document.getElementById('statVodafone').innerText = vCash.toLocaleString();
             document.getElementById('statInsta').innerText = insta.toLocaleString();
             document.getElementById('statCash').innerText = cashOnly.toLocaleString();
+        }
+
+        // إنشاء معاينة التقرير
+        function generatePreview() {
+            document.getElementById('previewDate').innerText = new Date().toISOString().split('T')[0];
+            document.getElementById('previewUser').innerText = currentUser ? currentUser.username : '-';
+            const tableHTML = document.querySelector('.table-responsive').innerHTML;
+            document.getElementById('previewTableContainer').innerHTML = tableHTML;
         }
     </script>
 </body>
