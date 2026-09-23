@@ -59,11 +59,20 @@
             align-items: center;
         }
 
-        .company-logo {
-            max-height: 50px;
-            max-width: 150px;
+        .company-logo-header {
+            max-height: 60px;
+            max-width: 180px;
             object-fit: contain;
-            border-radius: 4px;
+            border-radius: 6px;
+            background-color: #ffffff;
+            padding: 4px;
+        }
+
+        .company-logo-print {
+            max-height: 80px;
+            max-width: 220px;
+            object-fit: contain;
+            margin-bottom: 10px;
         }
 
         .archive-banner {
@@ -120,10 +129,10 @@
             </button>
         </div>
 
-        <!-- الشريط العلوي مع اسم الشركة واللوجو -->
+        <!-- الشريط العلوي الرئيسي مع اسم الشركة واللوجو -->
         <div class="card bg-dark text-white p-3 mb-3 d-flex flex-row justify-content-between align-items-center rounded-3 no-print">
             <div class="d-flex align-items-center gap-3">
-                <img id="displayCompanyLogo" src="" alt="Logo" class="company-logo bg-white p-1" style="display: none;">
+                <img id="displayCompanyLogo" src="" alt="Company Logo" class="company-logo-header" style="display: none;">
                 <div>
                     <h4 class="m-0" id="headerCompanyName">mohamed for computer</h4>
                     <small class="text-muted" id="userInfoDisplay">المستخدم الحالي: -</small>
@@ -148,9 +157,13 @@
             </div>
         </div>
 
-        <!-- شريط الأزرار -->
+        <!-- شريط الأزرار والفلتر -->
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
+                <!-- زر الفلتر والبحث في الخزن السابقة -->
+                <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <i class="fa-solid fa-filter me-1"></i> فلتر وبحث خزن سابقة
+                </button>
                 <button class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#companySettingsModal">
                     <i class="fa-solid fa-building me-1"></i> إعدادات الشركة واللوجو
                 </button>
@@ -170,7 +183,7 @@
 
             <div class="d-flex gap-2">
                 <!-- زر حفظ الخزينة المؤقت بدون إغلاقها -->
-                <button class="btn btn-primary fw-bold" onclick="saveCurrentTreasuryState()">
+                <button class="btn btn-success fw-bold" onclick="saveCurrentTreasuryState()">
                     <i class="fa-solid fa-floppy-disk me-1"></i> حفظ الخزينة
                 </button>
                 
@@ -178,7 +191,7 @@
                 <button class="btn btn-warning fw-bold text-dark" onclick="closeAndMigrateDay()">
                     <i class="fa-solid fa-file-export me-1"></i> إغلاق الخزينة وترحيل الرصيد للغد
                 </button>
-                <button class="btn btn-success fw-bold" onclick="window.print()">
+                <button class="btn btn-dark fw-bold" onclick="window.print()">
                     <i class="fa-solid fa-print me-1"></i> طباعة الخزينة الحالية
                 </button>
             </div>
@@ -238,12 +251,13 @@
             </div>
         </div>
 
-        <!-- ترويسة الطباعة -->
+        <!-- ترويسة الطباعة يظهر بها اللوجو بأعلى الشعار والتفاصيل -->
         <div class="print-only text-center mb-3">
-            <img id="printCompanyLogo" src="" alt="Logo" class="company-logo mb-2" style="display: none;">
-            <h2 id="printCompanyName">mohamed for computer</h2>
+            <img id="printCompanyLogo" src="" alt="Company Logo" class="company-logo-print" style="display: none;">
+            <h2 id="printCompanyName" class="fw-bold">mohamed for computer</h2>
             <h4>تقرير حركة الخزينة اليومية</h4>
-            <p>التاريخ: <span id="printDate"></span> | المستخدم / الخزينة: <span id="printUser"></span></p>
+            <p class="mb-0">التاريخ: <span id="printDate"></span> | المستخدم / الخزينة: <span id="printUser"></span></p>
+            <hr class="my-2">
         </div>
 
         <div class="row">
@@ -339,6 +353,82 @@
         </div>
     </div>
 
+    <!-- مودال الفلتر والبحث في الخزن السابقة والتفرير بين تاريخين -->
+    <div class="modal fade" id="filterModal" tabindex="-1">
+        <div class="modal-dialog modal-xl">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-filter me-2"></i>فلتر كشف حساب وحركات الخزن السابقة بين تاريخين</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-3 bg-light p-3 rounded mb-3 border">
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">من تاريخ:</label>
+                            <input type="date" id="filterStartDate" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">إلى تاريخ:</label>
+                            <input type="date" id="filterEndDate" class="form-control">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">تصفية حسب البند:</label>
+                            <select id="filterCategory" class="form-select cat-select-target">
+                                <option value="ALL">كل البنود</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label fw-bold">طريقة الدفع:</label>
+                            <select id="filterMethod" class="form-select">
+                                <option value="ALL">كل الطرق</option>
+                                <option value="cash">نقدي</option>
+                                <option value="instapay">إنستا باي</option>
+                                <option value="vodafone">فودافون كاش</option>
+                            </select>
+                        </div>
+                        <div class="col-12 text-end">
+                            <button class="btn btn-primary fw-bold px-4" onclick="executeRangeFilter()"><i class="fa-solid fa-magnifying-glass me-1"></i> عرض الحركات</button>
+                            <button class="btn btn-secondary px-3" onclick="resetRangeFilter()">إعادة ضبط</button>
+                        </div>
+                    </div>
+
+                    <!-- إحصائيات الفترة المحددة -->
+                    <div class="row text-center mb-3">
+                        <div class="col-md-4">
+                            <div class="p-2 bg-success text-white rounded">إجمالي وارد الفترة: <strong id="filterSumIn">0</strong></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 bg-danger text-white rounded">إجمالي منصرف الفترة: <strong id="filterSumOut">0</strong></div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="p-2 bg-primary text-white rounded">صافي الفترة: <strong id="filterNet">0</strong></div>
+                        </div>
+                    </div>
+
+                    <!-- جدول حركات الفترة -->
+                    <div class="table-responsive">
+                        <table class="table table-bordered table-striped text-center align-middle">
+                            <thead class="table-dark">
+                                <tr>
+                                    <th>التاريخ</th>
+                                    <th>النوع</th>
+                                    <th>المبلغ</th>
+                                    <th>البند</th>
+                                    <th>طريقة الدفع</th>
+                                    <th>البيان</th>
+                                    <th>بواسطة</th>
+                                </tr>
+                            </thead>
+                            <tbody id="filterResultsTableBody">
+                                <tr><td colspan="7" class="text-muted">اختر الفترة واضغط على "عرض الحركات"</td></tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- مودال إعدادات الشركة واللوجو -->
     <div class="modal fade" id="companySettingsModal" tabindex="-1">
         <div class="modal-dialog">
@@ -357,7 +447,7 @@
                         <input type="file" id="companyLogoFile" class="form-control" accept="image/*" onchange="previewLogoUpload(event)">
                     </div>
                     <div class="text-center">
-                        <img id="logoUploadPreview" src="" alt="معاينة اللوجو" class="company-logo border p-1" style="display: none;">
+                        <img id="logoUploadPreview" src="" alt="معاينة اللوجو" class="company-logo-print border p-1" style="display: none;">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -534,6 +624,8 @@
         let companySettings = JSON.parse(localStorage.getItem('gh_treasury_company') || '{"name": "mohamed for computer", "logo": ""}');
 
         document.getElementById('globalDateInput').value = todayDateStr;
+        document.getElementById('filterStartDate').value = todayDateStr;
+        document.getElementById('filterEndDate').value = todayDateStr;
 
         function handleLogin() {
             const u = document.getElementById('loginUser').value;
@@ -574,7 +666,7 @@
 
             if (companySettings.logo) {
                 document.getElementById('displayCompanyLogo').src = companySettings.logo;
-                document.getElementById('displayCompanyLogo').style.display = 'block';
+                document.getElementById('displayCompanyLogo').style.display = 'inline-block';
                 document.getElementById('printCompanyLogo').src = companySettings.logo;
                 document.getElementById('printCompanyLogo').style.display = 'inline-block';
                 document.getElementById('logoUploadPreview').src = companySettings.logo;
@@ -633,7 +725,13 @@
             const catTargets = document.querySelectorAll('.cat-select-target');
             
             list.innerHTML = '';
-            catTargets.forEach(el => el.innerHTML = '');
+            catTargets.forEach(el => {
+                if(el.id === 'filterCategory') {
+                    el.innerHTML = '<option value="ALL">كل البنود</option>';
+                } else {
+                    el.innerHTML = '';
+                }
+            });
 
             categories.forEach((c, index) => {
                 list.innerHTML += `
@@ -772,7 +870,6 @@
             let filtered = [...rawTransactions];
             const currentDate = document.getElementById('globalDateInput').value;
 
-            // التحكم في عرض شريط تنبيه الأرشيف
             if (currentDate !== todayDateStr) {
                 document.getElementById('archiveViewBanner').style.display = 'flex';
                 document.getElementById('viewingArchiveDateText').innerText = currentDate;
@@ -874,9 +971,9 @@
         }
 
         function getMethodTitle(m) {
-            if(m === 'cash') return ' نقدي';
-            if(m === 'instapay') return ' إنستا';
-            if(m === 'vodafone') return ' فودافون';
+            if(m === 'cash') return '1. نقدي';
+            if(m === 'instapay') return '2. إنستا';
+            if(m === 'vodafone') return '3. فودافون';
             return '';
         }
 
@@ -924,7 +1021,62 @@
             }
         }
 
-        // تحكم أرشيف الخزن والحذف للمحذوفات
+        // إمكانية تنفيذ الفلترة المتقدمة بين تاريخين
+        function executeRangeFilter() {
+            const start = document.getElementById('filterStartDate').value;
+            const end = document.getElementById('filterEndDate').value;
+            const cat = document.getElementById('filterCategory').value;
+            const method = document.getElementById('filterMethod').value;
+
+            let result = rawTransactions.filter(tx => {
+                let matchesUser = (currentUser.role === 'admin') ? true : (tx.created_by === currentUser.username);
+                let matchesDate = (!start || tx.created_at >= start) && (!end || tx.created_at <= end);
+                let matchesCat = (cat === 'ALL') || (tx.category === cat);
+                let matchesMethod = (method === 'ALL') || (tx.payment_method === method);
+
+                return matchesUser && matchesDate && matchesCat && matchesMethod;
+            });
+
+            const tbody = document.getElementById('filterResultsTableBody');
+            tbody.innerHTML = '';
+
+            let sumIn = 0, sumOut = 0;
+
+            if (result.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="7" class="text-danger fw-bold">لا توجد حركات مطابقة للفلتر المحدد</td></tr>';
+            } else {
+                result.forEach(tx => {
+                    if (tx.type === 'in') sumIn += Number(tx.amount);
+                    if (tx.type === 'out') sumOut += Number(tx.amount);
+
+                    tbody.innerHTML += `<tr>
+                        <td>${tx.created_at}</td>
+                        <td class="${tx.type === 'in' ? 'text-success fw-bold' : 'text-danger fw-bold'}">${tx.type === 'in' ? 'وارد (+)' : 'منصرف (-)'}</td>
+                        <td class="fw-bold">${tx.amount.toLocaleString()}</td>
+                        <td>${tx.category}</td>
+                        <td>${getMethodTitle(tx.payment_method)}</td>
+                        <td>${tx.description || '-'}</td>
+                        <td>${tx.created_by}</td>
+                    </tr>`;
+                });
+            }
+
+            document.getElementById('filterSumIn').innerText = sumIn.toLocaleString();
+            document.getElementById('filterSumOut').innerText = sumOut.toLocaleString();
+            document.getElementById('filterNet').innerText = (sumIn - sumOut).toLocaleString();
+        }
+
+        function resetRangeFilter() {
+            document.getElementById('filterStartDate').value = todayDateStr;
+            document.getElementById('filterEndDate').value = todayDateStr;
+            document.getElementById('filterCategory').value = 'ALL';
+            document.getElementById('filterMethod').value = 'ALL';
+            document.getElementById('filterResultsTableBody').innerHTML = '<tr><td colspan="7" class="text-muted">اختر الفترة واضغط على "عرض الحركات"</td></tr>';
+            document.getElementById('filterSumIn').innerText = '0';
+            document.getElementById('filterSumOut').innerText = '0';
+            document.getElementById('filterNet').innerText = '0';
+        }
+
         function loadArchive() {
             const tbody = document.getElementById('archiveTableBody');
             tbody.innerHTML = '';
@@ -1000,7 +1152,6 @@
             applyFilters();
         }
 
-        // إغلاق عرض الأرشيف والعودة لليوم الحالي استكمالاً للعمل
         function closeArchiveViewAndReturnToday() {
             document.getElementById('globalDateInput').value = todayDateStr;
             applyFilters();
