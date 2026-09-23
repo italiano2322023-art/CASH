@@ -44,18 +44,19 @@
         
         .summary-box {
             background-color: #ffffff;
-            border: 1px solid #000;
+            border: 1px solid #cbd5e1;
             padding: 15px;
-            border-radius: 6px;
+            border-radius: 8px;
             margin-top: 15px;
         }
 
-        .summary-row {
-            padding: 6px 0;
-            border-bottom: 1px solid #eee;
-        }
-        .summary-row:last-child {
-            border-bottom: none;
+        .summary-row-vertical {
+            padding: 8px 12px;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
 
         @media print {
@@ -103,7 +104,7 @@
                     <input type="date" id="globalDateInput" class="form-control form-control-sm border-0 py-0 px-1 bg-white text-dark fw-bold" style="width: 140px;" onchange="applyFilters()">
                 </div>
 
-                <!-- اختيار الخزينة (للأدمن) -->
+                <!-- اختيار الخزينة (خاص بالأدمن فقط) -->
                 <div id="adminSafeSelectorGroup" style="display: none;">
                     <label class="small text-warning me-1">عرض خزينة:</label>
                     <select id="safeFilterSelect" class="form-select form-select-sm d-inline-block w-auto" onchange="applyFilters()">
@@ -121,7 +122,7 @@
                     <i class="fa-solid fa-tags me-1"></i> إدارة البنود
                 </button>
                 <button id="btnUsersMgmt" class="btn btn-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#usersMgmtModal" style="display:none;">
-                    <i class="fa-solid fa-users-gear me-1"></i> إدارة المستخدمين
+                    <i class="fa-solid fa-users-gear me-1"></i> إدارة المستخدمين وصلاحيات الخزن
                 </button>
                 <button class="btn btn-dark fw-bold" data-bs-toggle="modal" data-bs-target="#archiveModal" onclick="loadArchive()">
                     <i class="fa-solid fa-box-archive me-1"></i> أرشيف الخزن
@@ -227,18 +228,21 @@
                         <table class="table table-bordered text-center align-middle mb-0">
                             <thead>
                                 <tr>
-                                    <th colspan="4" class="table-success py-2 fw-bold fs-6">الوارد (+)</th>
-                                    <th colspan="4" class="table-danger py-2 fw-bold fs-6">المنصرف (-)</th>
+                                    <th colspan="5" class="table-success py-2 fw-bold fs-6">الوارد (+)</th>
+                                    <th colspan="5" class="table-danger py-2 fw-bold fs-6">المنصرف (-)</th>
                                 </tr>
                                 <tr class="table-light">
-                                    <th style="width: 10%;">المبلغ</th>
-                                    <th style="width: 15%;">البند</th>
-                                    <th style="width: 12%;">طريقة الدفع</th>
-                                    <th style="width: 13%;">البيان/الملاحظات</th>
-                                    <th style="width: 10%;">المبلغ</th>
-                                    <th style="width: 15%;">البند</th>
-                                    <th style="width: 12%;">طريقة الدفع</th>
-                                    <th style="width: 13%;">البيان/الملاحظات</th>
+                                    <th style="width: 8%;">المبلغ</th>
+                                    <th style="width: 12%;">البند</th>
+                                    <th style="width: 10%;">طريقة الدفع</th>
+                                    <th style="width: 12%;">البيان</th>
+                                    <th style="width: 8%;" class="no-print">تحكم</th>
+                                    
+                                    <th style="width: 8%;">المبلغ</th>
+                                    <th style="width: 12%;">البند</th>
+                                    <th style="width: 10%;">طريقة الدفع</th>
+                                    <th style="width: 12%;">البيان</th>
+                                    <th style="width: 8%;" class="no-print">تحكم</th>
                                 </tr>
                             </thead>
                             <tbody id="ledgerTableBody">
@@ -248,59 +252,106 @@
                     </div>
                 </div>
 
-                <!-- الإجماليات أسفل الخزينة مرتبة حرفياً كما طلبت -->
+                <!-- الإجماليات أسفل الخزينة مرتبة عمودياً كما طلبت تماماً -->
                 <div class="summary-box">
-                    <h6 class="fw-bold text-center border-bottom pb-2 mb-3 bg-light py-1">ملخص الخزينة والإجماليات النهائية</h6>
+                    <h6 class="fw-bold text-center border-bottom pb-2 mb-3 bg-light py-2 rounded"><i class="fa-solid fa-calculator me-2"></i>ملخص وإجماليات الخزينة</h6>
                     
-                    <!-- 1. إجمالي الوارد -->
-                    <div class="summary-row d-flex justify-content-between align-items-center">
-                        <span class="fw-bold text-success fs-6"><i class="fa-solid fa-arrow-down-left me-1"></i> إجمالي الوارد:</span>
-                        <span id="sumInTotal" class="fw-bold fs-6 text-success">0</span>
-                    </div>
-                    <div class="d-flex justify-content-around text-muted small pb-2 border-bottom">
-                        <span>نقدي: <strong id="sumInCash">0</strong></span>
-                        <span>إنستا باي: <strong id="sumInInsta">0</strong></span>
-                        <span>فودافون كاش: <strong id="sumInVoda">0</strong></span>
+                    <!-- 1. إجمالي المقبوضات (على بعضه) -->
+                    <div class="summary-row-vertical bg-success bg-opacity-10 border border-success">
+                        <span class="fw-bold text-success fs-6"><i class="fa-solid fa-circle-arrow-down me-2"></i>إجمالي المقبوضات (الوارد):</span>
+                        <span id="sumInTotal" class="fw-bold fs-5 text-success">0</span>
                     </div>
 
-                    <!-- 2. إجمالي المنصرف -->
-                    <div class="summary-row d-flex justify-content-between align-items-center mt-2">
-                        <span class="fw-bold text-danger fs-6"><i class="fa-solid fa-arrow-up-right me-1"></i> إجمالي المنصرف:</span>
-                        <span id="sumOutTotal" class="fw-bold fs-6 text-danger">0</span>
-                    </div>
-                    <div class="d-flex justify-content-around text-muted small pb-2 border-bottom">
-                        <span>نقدي: <strong id="sumOutCash">0</strong></span>
-                        <span>إنستا باي: <strong id="sumOutInsta">0</strong></span>
-                        <span>فودافون كاش: <strong id="sumOutVoda">0</strong></span>
+                    <!-- 2. إجمالي المدفوعات (على بعضه) -->
+                    <div class="summary-row-vertical bg-danger bg-opacity-10 border border-danger">
+                        <span class="fw-bold text-danger fs-6"><i class="fa-solid fa-circle-arrow-up me-2"></i>إجمالي المدفوعات (المنصرف):</span>
+                        <span id="sumOutTotal" class="fw-bold fs-5 text-danger">0</span>
                     </div>
 
-                    <!-- 3. الفرق بينهما -->
-                    <div class="summary-row d-flex justify-content-between align-items-center my-2 bg-light px-2 rounded">
-                        <span class="fw-bold text-primary fs-6"><i class="fa-solid fa-calculator me-1"></i> الفرق بينهما (صافي الحركة):</span>
-                        <span id="netDiffTotal" class="fw-bold fs-6 text-primary">0</span>
+                    <!-- 3. الفرق بينهما (الصافي الكلي) -->
+                    <div class="summary-row-vertical bg-primary bg-opacity-10 border border-primary my-2">
+                        <span class="fw-bold text-primary fs-6"><i class="fa-solid fa-scale-balanced me-2"></i>الفرق بينهما (صافي الخزينة الكلي):</span>
+                        <span id="netDiffTotal" class="fw-bold fs-4 text-primary">0</span>
                     </div>
 
-                    <!-- 4. تفاصيل الأرصدة المتبقية -->
-                    <div class="row text-center mt-3 pt-2 border-top g-2">
-                        <div class="col-4">
+                    <hr class="my-3">
+
+                    <!-- 4. التفصيلي بعد الفرق بين اجمالي القبض والصرف -->
+                    <h6 class="fw-bold text-muted mb-2"><i class="fa-solid fa-list-check me-1"></i> التفاصيل حسب طريقة الدفع:</h6>
+                    
+                    <div class="row text-center g-2">
+                        <!-- تفاصيل الوارد -->
+                        <div class="col-md-6">
                             <div class="p-2 border rounded bg-light">
-                                <small class="d-block text-muted">رصيد نقدي</small>
-                                <strong id="netCash" class="pay-cash fs-6">0</strong>
+                                <strong class="d-block text-success border-bottom pb-1 mb-2">تفاصيل الوارد (القبض)</strong>
+                                <div class="d-flex justify-content-between px-2 mb-1"><span>نقدي:</span><strong id="sumInCash">0</strong></div>
+                                <div class="d-flex justify-content-between px-2 mb-1"><span>إنستا باي:</span><strong id="sumInInsta">0</strong></div>
+                                <div class="d-flex justify-content-between px-2"><span>فودافون كاش:</span><strong id="sumInVoda">0</strong></div>
                             </div>
                         </div>
-                        <div class="col-4">
+
+                        <!-- تفاصيل المنصرف -->
+                        <div class="col-md-6">
                             <div class="p-2 border rounded bg-light">
-                                <small class="d-block text-muted">رصيد إنستا باي</small>
-                                <strong id="netInsta" class="pay-instapay fs-6">0</strong>
+                                <strong class="d-block text-danger border-bottom pb-1 mb-2">تفاصيل المنصرف (الصرف)</strong>
+                                <div class="d-flex justify-content-between px-2 mb-1"><span>نقدي:</span><strong id="sumOutCash">0</strong></div>
+                                <div class="d-flex justify-content-between px-2 mb-1"><span>إنستا باي:</span><strong id="sumOutInsta">0</strong></div>
+                                <div class="d-flex justify-content-between px-2"><span>فودافون كاش:</span><strong id="sumOutVoda">0</strong></div>
                             </div>
                         </div>
-                        <div class="col-4">
-                            <div class="p-2 border rounded bg-light">
-                                <small class="d-block text-muted">رصيد فودافون كاش</small>
-                                <strong id="netVoda" class="pay-vodafone fs-6">0</strong>
+
+                        <!-- صافي المتبقي لكل طريقة -->
+                        <div class="col-12 mt-2">
+                            <div class="p-2 border rounded bg-white shadow-sm">
+                                <strong class="d-block text-dark border-bottom pb-1 mb-2">صافي الأرصدة المتبقية لكل طريقة (الرصيد المرحل)</strong>
+                                <div class="row text-center">
+                                    <div class="col-4 border-end">نقدي: <strong id="netCash" class="pay-cash fs-6">0</strong></div>
+                                    <div class="col-4 border-end">إنستا باي: <strong id="netInsta" class="pay-instapay fs-6">0</strong></div>
+                                    <div class="col-4">فودافون كاش: <strong id="netVoda" class="pay-vodafone fs-6">0</strong></div>
+                                </div>
                             </div>
                         </div>
                     </div>
+
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال تعديل حركة -->
+    <div class="modal fade" id="editTxModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-warning">
+                    <h5 class="modal-title fw-bold text-dark"><i class="fa-solid fa-pen me-2"></i>تعديل الحركة</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" id="editTxId">
+                    <div class="mb-3">
+                        <label class="form-label">المبلغ</label>
+                        <input type="number" id="editTxAmount" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">البند</label>
+                        <select id="editTxCategory" class="form-select cat-select-target"></select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">طريقة الدفع</label>
+                        <select id="editTxMethod" class="form-select">
+                            <option value="cash">1. نقدي</option>
+                            <option value="instapay">2. إنستا باي</option>
+                            <option value="vodafone">3. فودافون كاش</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">البيان / الملاحظات</label>
+                        <input type="text" id="editTxNotes" class="form-control">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button class="btn btn-primary fw-bold" onclick="saveTransactionEdit()">حفظ التعديل</button>
                 </div>
             </div>
         </div>
@@ -354,17 +405,23 @@
     <div class="modal fade" id="usersMgmtModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">إدارة المستخدمين</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header bg-secondary text-white"><h5 class="modal-title"><i class="fa-solid fa-users-gear me-2"></i>إدارة المستخدمين والصلاحيات</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
-                    <div class="mb-2"><input type="text" id="newUsername" class="form-control" placeholder="اسم المستخدم"></div>
-                    <div class="mb-2"><input type="password" id="newUserPass" class="form-control" placeholder="كلمة المرور"></div>
-                    <div class="mb-2">
-                        <select id="newUserRole" class="form-select">
-                            <option value="user">مستخدم / خزينة مستقلة</option>
-                            <option value="admin">مدير (أدمن)</option>
-                        </select>
+                    <div class="card p-3 mb-3 bg-light">
+                        <h6 class="fw-bold mb-2 text-primary">إضافة مستخدم جديد بخزينة منفصلة</h6>
+                        <div class="mb-2"><input type="text" id="newUsername" class="form-control" placeholder="اسم المستخدم"></div>
+                        <div class="mb-2"><input type="password" id="newUserPass" class="form-control" placeholder="كلمة المرور"></div>
+                        <div class="mb-2">
+                            <select id="newUserRole" class="form-select">
+                                <option value="user">مستخدم عادي (خزينة منفصلة)</option>
+                                <option value="admin">مدير أدمن (صلاحية كاملة والاطلاع على كل الخزن)</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-success w-100 fw-bold" onclick="addUser()">إضافة المستخدم</button>
                     </div>
-                    <button class="btn btn-success w-100" onclick="addUser()">إضافة مستخدم</button>
+
+                    <h6>قائمة المستخدمين الحاليين:</h6>
+                    <ul id="usersListDisplay" class="list-group"></ul>
                 </div>
             </div>
         </div>
@@ -373,8 +430,8 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentUser = null;
-        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs_v3') || '[]');
-        let archiveData = JSON.parse(localStorage.getItem('gh_treasury_archive_v3') || '[]');
+        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs_v4') || '[]');
+        let archiveData = JSON.parse(localStorage.getItem('gh_treasury_archive_v4') || '[]');
         let categories = JSON.parse(localStorage.getItem('gh_treasury_cats') || '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
         let users = JSON.parse(localStorage.getItem('gh_treasury_users') || '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
 
@@ -388,15 +445,19 @@
             if (found) {
                 currentUser = found;
                 document.getElementById('loginScreen').style.display = 'none';
-                document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (${currentUser.role === 'admin' ? 'مدير' : 'خزينة مستقلة'})`;
+                document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (${currentUser.role === 'admin' ? 'مدير - صلاحية كاملة' : 'خزينة منفصلة'})`;
                 
                 if (currentUser.role === 'admin') {
                     document.getElementById('adminSafeSelectorGroup').style.display = 'block';
                     document.getElementById('btnUsersMgmt').style.display = 'inline-block';
                     updateSafeSelector();
+                } else {
+                    document.getElementById('adminSafeSelectorGroup').style.display = 'none';
+                    document.getElementById('btnUsersMgmt').style.display = 'none';
                 }
                 
                 loadCategories();
+                renderUsersList();
                 applyFilters();
             } else {
                 alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
@@ -410,6 +471,17 @@
             select.innerHTML = '<option value="ALL">كل الخزائن (الكل)</option>';
             users.forEach(u => {
                 select.innerHTML += `<option value="${u.username}">خزينة ${u.username}</option>`;
+            });
+        }
+
+        function renderUsersList() {
+            const list = document.getElementById('usersListDisplay');
+            if(!list) return;
+            list.innerHTML = '';
+            users.forEach(u => {
+                list.innerHTML += `<li class="list-group-item d-flex justify-content-between align-items-center">
+                    <div><strong>${u.username}</strong> <span class="badge ${u.role === 'admin' ? 'bg-danger' : 'bg-info'}">${u.role}</span></div>
+                </li>`;
             });
         }
 
@@ -441,10 +513,12 @@
             const p = document.getElementById('newUserPass').value;
             const r = document.getElementById('newUserRole').value;
             if(u && p) {
+                if(users.some(x => x.username === u)) return alert('اسم المستخدم موجود بالفعل');
                 users.push({ username: u, pass: p, role: r });
                 localStorage.setItem('gh_treasury_users', JSON.stringify(users));
-                alert('تمت إضافة المستخدم بنجاح');
+                alert('تمت إضافة المستخدم وتخصيص خزينة منفصلة له بنجاح');
                 updateSafeSelector();
+                renderUsersList();
                 document.getElementById('newUsername').value = '';
                 document.getElementById('newUserPass').value = '';
             }
@@ -468,7 +542,7 @@
             };
 
             rawTransactions.push(newTx);
-            localStorage.setItem('gh_treasury_txs_v3', JSON.stringify(rawTransactions));
+            localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
 
             document.getElementById(prefix + 'Amount').value = '';
             document.getElementById(prefix + 'Notes').value = '';
@@ -476,10 +550,48 @@
             applyFilters();
         }
 
+        function openEditModal(txId) {
+            const tx = rawTransactions.find(x => x.id === txId);
+            if(!tx) return;
+
+            document.getElementById('editTxId').value = tx.id;
+            document.getElementById('editTxAmount').value = tx.amount;
+            document.getElementById('editTxCategory').value = tx.category;
+            document.getElementById('editTxMethod').value = tx.payment_method;
+            document.getElementById('editTxNotes').value = tx.description || '';
+
+            const editModal = new bootstrap.Modal(document.getElementById('editTxModal'));
+            editModal.show();
+        }
+
+        function saveTransactionEdit() {
+            const id = parseInt(document.getElementById('editTxId').value);
+            const tx = rawTransactions.find(x => x.id === id);
+            if(tx) {
+                tx.amount = parseFloat(document.getElementById('editTxAmount').value) || 0;
+                tx.category = document.getElementById('editTxCategory').value;
+                tx.payment_method = document.getElementById('editTxMethod').value;
+                tx.description = document.getElementById('editTxNotes').value;
+
+                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+                bootstrap.Modal.getInstance(document.getElementById('editTxModal')).hide();
+                applyFilters();
+            }
+        }
+
+        function deleteTransaction(txId) {
+            if(confirm('هل أنت تأكد من حذف هذه الحركة؟')) {
+                rawTransactions = rawTransactions.filter(x => x.id !== txId);
+                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+                applyFilters();
+            }
+        }
+
         function applyFilters() {
             let filtered = [...rawTransactions];
             const currentDate = document.getElementById('globalDateInput').value;
 
+            // تحديد نطاق الخزينة حسب المستخدم والصلاحيات
             if (currentUser && currentUser.role !== 'admin') {
                 filtered = filtered.filter(x => x.created_by === currentUser.username);
             } else if (currentUser && currentUser.role === 'admin') {
@@ -494,14 +606,12 @@
 
         function renderSortedTable(data) {
             document.getElementById('printDate').innerText = document.getElementById('globalDateInput').value;
-            document.getElementById('printUser').innerText = currentUser ? currentUser.username : '-';
+            document.getElementById('printUser').innerText = currentUser ? (currentUser.role === 'admin' ? document.getElementById('safeFilterSelect').value : currentUser.username) : '-';
 
             let inList = data.filter(x => x.type === 'in');
             let outList = data.filter(x => x.type === 'out');
 
-            // ترتيب حسب طريقة الدفع (نقدي 1، إنستا 2، فودافون 3)
             const methodOrder = { 'cash': 1, 'instapay': 2, 'vodafone': 3 };
-            
             inList.sort((a, b) => methodOrder[a.payment_method] - methodOrder[b.payment_method]);
             outList.sort((a, b) => methodOrder[a.payment_method] - methodOrder[b.payment_method]);
 
@@ -531,16 +641,18 @@
 
                 tbody.innerHTML += `<tr>
                     <!-- جانب الوارد -->
-                    <td class="text-success fw-bold">${inTx ? inTx.amount : ''}</td>
+                    <td class="text-success fw-bold">${inTx ? inTx.amount.toLocaleString() : ''}</td>
                     <td>${inTx ? inTx.category : ''}</td>
                     <td class="${inTx ? getMethodClass(inTx.payment_method) : ''}">${inTx ? getMethodTitle(inTx.payment_method) : ''}</td>
                     <td>${inTx ? (inTx.description || '') : ''}</td>
+                    <td class="no-print">${inTx ? `<button class="btn btn-sm btn-outline-warning p-0 px-1 me-1" onclick="openEditModal(${inTx.id})" title="تعديل"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-danger p-0 px-1" onclick="deleteTransaction(${inTx.id})" title="حذف"><i class="fa-solid fa-trash"></i></button>` : ''}</td>
 
                     <!-- جانب المنصرف -->
-                    <td class="text-danger fw-bold">${outTx ? outTx.amount : ''}</td>
+                    <td class="text-danger fw-bold">${outTx ? outTx.amount.toLocaleString() : ''}</td>
                     <td>${outTx ? outTx.category : ''}</td>
                     <td class="${outTx ? getMethodClass(outTx.payment_method) : ''}">${outTx ? getMethodTitle(outTx.payment_method) : ''}</td>
                     <td>${outTx ? (outTx.description || '') : ''}</td>
+                    <td class="no-print">${outTx ? `<button class="btn btn-sm btn-outline-warning p-0 px-1 me-1" onclick="openEditModal(${outTx.id})" title="تعديل"><i class="fa-solid fa-pen"></i></button><button class="btn btn-sm btn-outline-danger p-0 px-1" onclick="deleteTransaction(${outTx.id})" title="حذف"><i class="fa-solid fa-trash"></i></button>` : ''}</td>
                 </tr>`;
             }
 
@@ -552,18 +664,19 @@
             let netVoda = sumInVoda - sumOutVoda;
             let netDiffTotal = totalIn - totalOut;
 
-            // تحديث قيم ملخص الخزينة بالإشغال المطلوب
+            // تحديث قيم ملخص الخزينة العمودي الشامل
             document.getElementById('sumInTotal').innerText = totalIn.toLocaleString();
+            document.getElementById('sumOutTotal').innerText = totalOut.toLocaleString();
+            document.getElementById('netDiffTotal').innerText = netDiffTotal.toLocaleString();
+
+            // التفاصيل أسفل الفرق
             document.getElementById('sumInCash').innerText = sumInCash.toLocaleString();
             document.getElementById('sumInInsta').innerText = sumInInsta.toLocaleString();
             document.getElementById('sumInVoda').innerText = sumInVoda.toLocaleString();
 
-            document.getElementById('sumOutTotal').innerText = totalOut.toLocaleString();
             document.getElementById('sumOutCash').innerText = sumOutCash.toLocaleString();
             document.getElementById('sumOutInsta').innerText = sumOutInsta.toLocaleString();
             document.getElementById('sumOutVoda').innerText = sumOutVoda.toLocaleString();
-
-            document.getElementById('netDiffTotal').innerText = netDiffTotal.toLocaleString();
 
             document.getElementById('netCash').innerText = netCash.toLocaleString();
             document.getElementById('netInsta').innerText = netInsta.toLocaleString();
@@ -585,12 +698,11 @@
 
         function getMethodTitle(m) {
             if(m === 'cash') return '1. نقدي';
-            if(m === 'instapay') return '2. إنستا باي';
+            if(m === 'instapay') return '2. إنستا';
             if(m === 'vodafone') return '3. فودافون';
             return '';
         }
 
-        // دالة الترحيل المغلقة للغد مع إضافة سطر "رصيد مرحل إجمالي"
         function closeAndMigrateDay() {
             const currentDateStr = document.getElementById('globalDateInput').value;
             const netCash = parseFloat(document.getElementById('netCash').innerText.replace(/,/g, ''));
@@ -598,46 +710,31 @@
             const netVoda = parseFloat(document.getElementById('netVoda').innerText.replace(/,/g, ''));
             const netTotal = parseFloat(document.getElementById('netDiffTotal').innerText.replace(/,/g, ''));
 
-            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وترحيل الأرصدة (نقدي، إنستا، فودافون) لليوم التالي؟`)) {
-                // حفظ في الأرشيف
+            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وترحيل الأرصدة المتبقية لليوم التالي؟`)) {
                 archiveData.push({
                     date: currentDateStr,
                     user: currentUser.username,
                     netCash, netInsta, netVoda, netTotal
                 });
-                localStorage.setItem('gh_treasury_archive_v3', JSON.stringify(archiveData));
+                localStorage.setItem('gh_treasury_archive_v4', JSON.stringify(archiveData));
 
-                // حساب تاريخ الغد
                 let nextDate = new Date(currentDateStr);
                 nextDate.setDate(nextDate.getDate() + 1);
                 let nextDateStr = nextDate.toISOString().split('T')[0];
 
-                // 1. إضافة سطر إجمالي الرصيد المرحل في جانب القبض
                 if (netTotal > 0) {
                     rawTransactions.push({
-                        id: Date.now(),
-                        created_at: nextDateStr,
-                        type: 'in',
-                        amount: netTotal,
-                        category: 'رصيد مرحل إجمالي',
-                        payment_method: 'cash',
-                        description: 'إجمالي الرصيد المرحل الكلي من يوم ' + currentDateStr,
-                        created_by: currentUser.username
+                        id: Date.now(), created_at: nextDateStr, type: 'in', amount: netTotal,
+                        category: 'رصيد مرحل إجمالي', payment_method: 'cash',
+                        description: 'إجمالي الرصيد المرحل الكلي من يوم ' + currentDateStr, created_by: currentUser.username
                     });
                 }
 
-                // 2. ترحيل أرصدة الطرق المنفصلة للغد
-                if (netCash > 0) {
-                    rawTransactions.push({ id: Date.now() + 1, created_at: nextDateStr, type: 'in', amount: netCash, category: 'رصيد مرحل سابق', payment_method: 'cash', description: 'رصيد نقدي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
-                }
-                if (netInsta > 0) {
-                    rawTransactions.push({ id: Date.now() + 2, created_at: nextDateStr, type: 'in', amount: netInsta, category: 'رصيد مرحل سابق', payment_method: 'instapay', description: 'رصيد إنستا باي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
-                }
-                if (netVoda > 0) {
-                    rawTransactions.push({ id: Date.now() + 3, created_at: nextDateStr, type: 'in', amount: netVoda, category: 'رصيد مرحل سابق', payment_method: 'vodafone', description: 'رصيد فودافون كاش مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
-                }
+                if (netCash > 0) rawTransactions.push({ id: Date.now() + 1, created_at: nextDateStr, type: 'in', amount: netCash, category: 'رصيد مرحل سابق', payment_method: 'cash', description: 'رصيد نقدي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
+                if (netInsta > 0) rawTransactions.push({ id: Date.now() + 2, created_at: nextDateStr, type: 'in', amount: netInsta, category: 'رصيد مرحل سابق', payment_method: 'instapay', description: 'رصيد إنستا باي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
+                if (netVoda > 0) rawTransactions.push({ id: Date.now() + 3, created_at: nextDateStr, type: 'in', amount: netVoda, category: 'رصيد مرحل سابق', payment_method: 'vodafone', description: 'رصيد فودافون كاش مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
 
-                localStorage.setItem('gh_treasury_txs_v3', JSON.stringify(rawTransactions));
+                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
 
                 document.getElementById('globalDateInput').value = nextDateStr;
                 alert('تم الترحيل بنجاح إلى تاريخ: ' + nextDateStr);
