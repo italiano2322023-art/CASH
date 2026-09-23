@@ -66,6 +66,18 @@
             border-radius: 4px;
         }
 
+        .archive-banner {
+            background-color: #e0f2fe;
+            border: 1px solid #0284c7;
+            color: #0369a1;
+            padding: 10px 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
@@ -97,6 +109,17 @@
     <!-- النافذة الرئيسية -->
     <div class="container-fluid py-3 px-4">
         
+        <!-- شريط تنبيه الاستعراض القديم مع زر العودة للعمل -->
+        <div id="archiveViewBanner" class="archive-banner no-print" style="display: none;">
+            <div>
+                <i class="fa-solid fa-clock-rotate-left me-2"></i>
+                <strong>تنبيه:</strong> أنت تقوم الآن بعرض خزينة أرشيف قديمة بتاريخ (<span id="viewingArchiveDateText"></span>).
+            </div>
+            <button class="btn btn-primary btn-sm fw-bold" onclick="closeArchiveViewAndReturnToday()">
+                <i class="fa-solid fa-xmark me-1"></i> إغلاق العرض والعودة لليوم الحالي
+            </button>
+        </div>
+
         <!-- الشريط العلوي مع اسم الشركة واللوجو -->
         <div class="card bg-dark text-white p-3 mb-3 d-flex flex-row justify-content-between align-items-center rounded-3 no-print">
             <div class="d-flex align-items-center gap-3">
@@ -139,6 +162,9 @@
                 </button>
                 <button class="btn btn-outline-dark fw-bold" data-bs-toggle="modal" data-bs-target="#archiveModal" onclick="loadArchive()">
                     <i class="fa-solid fa-box-archive me-1"></i> أرشيف الخزن
+                </button>
+                <button id="btnTrashBin" class="btn btn-outline-danger fw-bold" data-bs-toggle="modal" data-bs-target="#trashModal" onclick="loadTrash()" style="display:none;">
+                    <i class="fa-solid fa-trash-can me-1"></i> سلة المحذوفات
                 </button>
             </div>
 
@@ -399,10 +425,35 @@
                                 <th>رصيد إنستا</th>
                                 <th>رصيد فودافون</th>
                                 <th>الإجمالي المرحل للغد</th>
-                                <th>عرض الخزينة</th>
+                                <th>تحكم</th>
                             </tr>
                         </thead>
                         <tbody id="archiveTableBody"></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال سلة المحذوفات (للأدمن) -->
+    <div class="modal fade" id="trashModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fa-solid fa-trash-can me-2"></i>سلة المحذوفات (الخزن المحذوفة)</h5>
+                    <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <table class="table table-striped table-hover text-center">
+                        <thead>
+                            <tr>
+                                <th>تاريخ الخزينة</th>
+                                <th>اسم المستخدم</th>
+                                <th>الإجمالي</th>
+                                <th>تحكم واستعادة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="trashTableBody"></tbody>
                     </table>
                 </div>
             </div>
@@ -454,14 +505,35 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        const MASTER_TX_KEY = 'gh_treasury_master_v1';
+        const MASTER_ARCHIVE_KEY = 'gh_treasury_archive_master_v1';
+        const MASTER_TRASH_KEY = 'gh_treasury_trash_master_v1';
+        const MASTER_CATS_KEY = 'gh_treasury_cats_master_v1';
+
+        function getMergedStoredData(masterKey, oldKeys, defaultValue) {
+            let existing = localStorage.getItem(masterKey);
+            if (existing) return JSON.parse(existing);
+            
+            for (let key of oldKeys) {
+                let oldData = localStorage.getItem(key);
+                if (oldData) {
+                    localStorage.setItem(masterKey, oldData);
+                    return JSON.parse(oldData);
+                }
+            }
+            return JSON.parse(defaultValue);
+        }
+
         let currentUser = null;
-        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs_v5') || '[]');
-        let archiveData = JSON.parse(localStorage.getItem('gh_treasury_archive_v5') || '[]');
-        let categories = JSON.parse(localStorage.getItem('gh_treasury_cats') || '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
+        let todayDateStr = new Date().toISOString().split('T')[0];
+        let rawTransactions = getMergedStoredData(MASTER_TX_KEY, ['gh_treasury_txs_v5', 'gh_treasury_txs_v4'], '[]');
+        let archiveData = getMergedStoredData(MASTER_ARCHIVE_KEY, ['gh_treasury_archive_v5', 'gh_treasury_archive_v4'], '[]');
+        let trashData = getMergedStoredData(MASTER_TRASH_KEY, [], '[]');
+        let categories = getMergedStoredData(MASTER_CATS_KEY, ['gh_treasury_cats'], '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
         let users = JSON.parse(localStorage.getItem('gh_treasury_users') || '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
         let companySettings = JSON.parse(localStorage.getItem('gh_treasury_company') || '{"name": "mohamed for computer", "logo": ""}');
 
-        document.getElementById('globalDateInput').value = new Date().toISOString().split('T')[0];
+        document.getElementById('globalDateInput').value = todayDateStr;
 
         function handleLogin() {
             const u = document.getElementById('loginUser').value;
@@ -476,10 +548,12 @@
                 if (currentUser.role === 'admin') {
                     document.getElementById('adminSafeSelectorGroup').style.display = 'block';
                     document.getElementById('btnUsersMgmt').style.display = 'inline-block';
+                    document.getElementById('btnTrashBin').style.display = 'inline-block';
                     updateSafeSelector();
                 } else {
                     document.getElementById('adminSafeSelectorGroup').style.display = 'none';
                     document.getElementById('btnUsersMgmt').style.display = 'none';
+                    document.getElementById('btnTrashBin').style.display = 'none';
                 }
                 
                 loadCompanySettings();
@@ -493,7 +567,6 @@
 
         function logout() { location.reload(); }
 
-        // تحميل وحفظ بيانات الشركة واللوجو
         function loadCompanySettings() {
             document.getElementById('headerCompanyName').innerText = companySettings.name;
             document.getElementById('companyNameInput').value = companySettings.name;
@@ -580,7 +653,7 @@
             if (name) {
                 if(categories.includes(name)) return alert('هذا البند موجود بالفعل');
                 categories.push(name);
-                localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
+                localStorage.setItem(MASTER_CATS_KEY, JSON.stringify(categories));
                 document.getElementById('newCatName').value = '';
                 loadCategories();
             }
@@ -591,12 +664,12 @@
             const newVal = prompt('تعديل اسم البند:', oldVal);
             if (newVal && newVal.trim() !== '') {
                 categories[index] = newVal.trim();
-                localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
+                localStorage.setItem(MASTER_CATS_KEY, JSON.stringify(categories));
                 
                 rawTransactions.forEach(tx => {
                     if (tx.category === oldVal) tx.category = newVal.trim();
                 });
-                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
+                localStorage.setItem(MASTER_TX_KEY, JSON.stringify(rawTransactions));
 
                 loadCategories();
                 applyFilters();
@@ -606,7 +679,7 @@
         function deleteCategory(index) {
             if (confirm(`هل أنت تأكد من حذف البند (${categories[index]})؟`)) {
                 categories.splice(index, 1);
-                localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
+                localStorage.setItem(MASTER_CATS_KEY, JSON.stringify(categories));
                 loadCategories();
             }
         }
@@ -639,13 +712,13 @@
 
             const newTx = {
                 id: Date.now(),
-                created_at: selectedDate || new Date().toISOString().split('T')[0],
+                created_at: selectedDate || todayDateStr,
                 type, amount, category, payment_method: method, description: notes,
                 created_by: currentUser.username
             };
 
             rawTransactions.push(newTx);
-            localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
+            localStorage.setItem(MASTER_TX_KEY, JSON.stringify(rawTransactions));
 
             document.getElementById(prefix + 'Amount').value = '';
             document.getElementById(prefix + 'Notes').value = '';
@@ -653,10 +726,9 @@
             applyFilters();
         }
 
-        // حفظ الخزينة المؤقت بدون إغلاقها
         function saveCurrentTreasuryState() {
-            localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
-            alert('تم حفظ حالة الخزينة الحالية بنجاح دون إغلاق اليومية 👍');
+            localStorage.setItem(MASTER_TX_KEY, JSON.stringify(rawTransactions));
+            alert('تم حفظ جميع حركات الخزينة بنجاح ونضمن لك عدم ضياع أي بيان 👍');
         }
 
         function openEditModal(txId) {
@@ -682,7 +754,7 @@
                 tx.payment_method = document.getElementById('editTxMethod').value;
                 tx.description = document.getElementById('editTxNotes').value;
 
-                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
+                localStorage.setItem(MASTER_TX_KEY, JSON.stringify(rawTransactions));
                 bootstrap.Modal.getInstance(document.getElementById('editTxModal')).hide();
                 applyFilters();
             }
@@ -691,7 +763,7 @@
         function deleteTransaction(txId) {
             if(confirm('هل أنت تأكد من حذف هذه الحركة؟')) {
                 rawTransactions = rawTransactions.filter(x => x.id !== txId);
-                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
+                localStorage.setItem(MASTER_TX_KEY, JSON.stringify(rawTransactions));
                 applyFilters();
             }
         }
@@ -699,6 +771,14 @@
         function applyFilters() {
             let filtered = [...rawTransactions];
             const currentDate = document.getElementById('globalDateInput').value;
+
+            // التحكم في عرض شريط تنبيه الأرشيف
+            if (currentDate !== todayDateStr) {
+                document.getElementById('archiveViewBanner').style.display = 'flex';
+                document.getElementById('viewingArchiveDateText').innerText = currentDate;
+            } else {
+                document.getElementById('archiveViewBanner').style.display = 'none';
+            }
 
             if (currentUser && currentUser.role !== 'admin') {
                 filtered = filtered.filter(x => x.created_by === currentUser.username);
@@ -772,17 +852,14 @@
             let netVoda = sumInVoda - sumOutVoda;
             let netDiffTotal = totalIn - totalOut;
 
-            // تحديث إجماليات ملخص الخزينة
             document.getElementById('sumInTotal').innerText = totalIn.toLocaleString();
             document.getElementById('sumOutTotal').innerText = totalOut.toLocaleString();
             document.getElementById('netDiffTotal').innerText = netDiffTotal.toLocaleString();
 
-            // صافي الرصيد المتبقي
             document.getElementById('netCash').innerText = netCash.toLocaleString();
             document.getElementById('netInsta').innerText = netInsta.toLocaleString();
             document.getElementById('netVoda').innerText = netVoda.toLocaleString();
 
-            // الكروت الجانبية
             document.getElementById('statCash').innerText = netCash.toLocaleString();
             document.getElementById('statInsta').innerText = netInsta.toLocaleString();
             document.getElementById('statVodafone').innerText = netVoda.toLocaleString();
@@ -797,13 +874,12 @@
         }
 
         function getMethodTitle(m) {
-            if(m === 'cash') return '1. نقدي';
-            if(m === 'instapay') return '2. إنستا';
-            if(m === 'vodafone') return '3. فودافون';
+            if(m === 'cash') return ' نقدي';
+            if(m === 'instapay') return ' إنستا';
+            if(m === 'vodafone') return ' فودافون';
             return '';
         }
 
-        // إغلاق الخزينة، أرشفة كاملة، وتفريغ الحركات للجديد
         function closeAndMigrateDay() {
             const currentDateStr = document.getElementById('globalDateInput').value;
             const netCash = parseFloat(document.getElementById('netCash').innerText.replace(/,/g, ''));
@@ -812,23 +888,21 @@
             const netTotal = parseFloat(document.getElementById('netDiffTotal').innerText.replace(/,/g, ''));
 
             if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr})، حفظها كاملة بالأرشيف، وتفريغ الجدول لخزينة جديدة؟`)) {
-                // 1. أرشفة الحركات الكاملة للخزينة المغلقة
                 const todayTransactions = rawTransactions.filter(x => x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username));
 
                 archiveData.push({
+                    id: Date.now(),
                     date: currentDateStr,
                     user: currentUser.username,
                     netCash, netInsta, netVoda, netTotal,
                     transactions: todayTransactions
                 });
-                localStorage.setItem('gh_treasury_archive_v5', JSON.stringify(archiveData));
+                localStorage.setItem(MASTER_ARCHIVE_KEY, JSON.stringify(archiveData));
 
-                // 2. حساب التاريخ القادم
                 let nextDate = new Date(currentDateStr);
                 nextDate.setDate(nextDate.getDate() + 1);
                 let nextDateStr = nextDate.toISOString().split('T')[0];
 
-                // 3. إضافة حركات الأرصدة المرحالة لليوم التالي
                 if (netTotal > 0) {
                     rawTransactions.push({
                         id: Date.now(), created_at: nextDateStr, type: 'in', amount: netTotal,
@@ -841,19 +915,24 @@
                 if (netInsta > 0) rawTransactions.push({ id: Date.now() + 2, created_at: nextDateStr, type: 'in', amount: netInsta, category: 'رصيد مرحل سابق', payment_method: 'instapay', description: 'رصيد إنستا باي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
                 if (netVoda > 0) rawTransactions.push({ id: Date.now() + 3, created_at: nextDateStr, type: 'in', amount: netVoda, category: 'رصيد مرحل سابق', payment_method: 'vodafone', description: 'رصيد فودافون كاش مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
 
-                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
+                localStorage.setItem(MASTER_TX_KEY, JSON.stringify(rawTransactions));
 
-                // 4. تغيير التاريخ لليوم الجديد وتحديث العرض ليكون فارغاً وجاهزاً
+                todayDateStr = nextDateStr;
                 document.getElementById('globalDateInput').value = nextDateStr;
                 alert('تمت أرشفة الخزينة وإغلاقها بنجاح! وتفريغ الجدول لبدء خزينة تاريخ: ' + nextDateStr);
                 applyFilters();
             }
         }
 
+        // تحكم أرشيف الخزن والحذف للمحذوفات
         function loadArchive() {
             const tbody = document.getElementById('archiveTableBody');
             tbody.innerHTML = '';
-            archiveData.forEach(item => {
+            archiveData.forEach((item, index) => {
+                let adminDeleteBtn = (currentUser && currentUser.role === 'admin') 
+                    ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="moveToTrash(${index})" title="نقل لسلة المحذوفات"><i class="fa-solid fa-trash"></i></button>` 
+                    : '';
+
                 tbody.innerHTML += `<tr>
                     <td>${item.date}</td>
                     <td>${item.user}</td>
@@ -861,13 +940,69 @@
                     <td class="pay-instapay">${item.netInsta.toLocaleString()}</td>
                     <td class="pay-vodafone">${item.netVoda.toLocaleString()}</td>
                     <td class="fw-bold text-primary">${item.netTotal.toLocaleString()}</td>
-                    <td><button class="btn btn-sm btn-outline-primary" onclick="viewArchiveDate('${item.date}')" data-bs-dismiss="modal">عرض الخزينة</button></td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewArchiveDate('${item.date}')" data-bs-dismiss="modal"><i class="fa-solid fa-eye me-1"></i>عرض الخزينة</button>
+                        ${adminDeleteBtn}
+                    </td>
                 </tr>`;
             });
         }
 
+        function moveToTrash(index) {
+            if(confirm('هل أنت تأكد من نقل هذه الخزينة إلى سلة المحذوفات؟')) {
+                const deletedItem = archiveData.splice(index, 1)[0];
+                trashData.push(deletedItem);
+                
+                localStorage.setItem(MASTER_ARCHIVE_KEY, JSON.stringify(archiveData));
+                localStorage.setItem(MASTER_TRASH_KEY, JSON.stringify(trashData));
+                
+                loadArchive();
+            }
+        }
+
+        function loadTrash() {
+            const tbody = document.getElementById('trashTableBody');
+            tbody.innerHTML = '';
+            trashData.forEach((item, index) => {
+                tbody.innerHTML += `<tr>
+                    <td>${item.date}</td>
+                    <td>${item.user}</td>
+                    <td class="fw-bold">${item.netTotal.toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success me-1" onclick="restoreFromTrash(${index})"><i class="fa-solid fa-rotate-left me-1"></i>استعادة الأرشيف</button>
+                        <button class="btn btn-sm btn-danger" onclick="permanentlyDeleteTrash(${index})"><i class="fa-solid fa-xmark me-1"></i>حذف نهائي</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function restoreFromTrash(index) {
+            const restoredItem = trashData.splice(index, 1)[0];
+            archiveData.push(restoredItem);
+
+            localStorage.setItem(MASTER_ARCHIVE_KEY, JSON.stringify(archiveData));
+            localStorage.setItem(MASTER_TRASH_KEY, JSON.stringify(trashData));
+
+            loadTrash();
+            alert('تمت استعادة الخزينة بنجاح إلى الأرشيف الرئيسي!');
+        }
+
+        function permanentlyDeleteTrash(index) {
+            if(confirm('تنبيه: هل أنت تأكد من حذف هذه الخزينة نهائياً؟ لن تظهر مجدداً!')) {
+                trashData.splice(index, 1);
+                localStorage.setItem(MASTER_TRASH_KEY, JSON.stringify(trashData));
+                loadTrash();
+            }
+        }
+
         function viewArchiveDate(dateStr) {
             document.getElementById('globalDateInput').value = dateStr;
+            applyFilters();
+        }
+
+        // إغلاق عرض الأرشيف والعودة لليوم الحالي استكمالاً للعمل
+        function closeArchiveViewAndReturnToday() {
+            document.getElementById('globalDateInput').value = todayDateStr;
             applyFilters();
         }
     </script>
