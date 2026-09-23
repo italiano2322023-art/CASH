@@ -252,23 +252,23 @@
                     </div>
                 </div>
 
-                <!-- الإجماليات أسفل الخزينة مرتبة عمودياً كما طلبت تماماً -->
+                <!-- الإجماليات أسفل الخزينة -->
                 <div class="summary-box">
                     <h6 class="fw-bold text-center border-bottom pb-2 mb-3 bg-light py-2 rounded"><i class="fa-solid fa-calculator me-2"></i>ملخص وإجماليات الخزينة</h6>
                     
-                    <!-- 1. إجمالي المقبوضات (على بعضه) -->
+                    <!-- 1. إجمالي المقبوضات -->
                     <div class="summary-row-vertical bg-success bg-opacity-10 border border-success">
                         <span class="fw-bold text-success fs-6"><i class="fa-solid fa-circle-arrow-down me-2"></i>إجمالي المقبوضات (الوارد):</span>
                         <span id="sumInTotal" class="fw-bold fs-5 text-success">0</span>
                     </div>
 
-                    <!-- 2. إجمالي المدفوعات (على بعضه) -->
+                    <!-- 2. إجمالي المدفوعات -->
                     <div class="summary-row-vertical bg-danger bg-opacity-10 border border-danger">
                         <span class="fw-bold text-danger fs-6"><i class="fa-solid fa-circle-arrow-up me-2"></i>إجمالي المدفوعات (المنصرف):</span>
                         <span id="sumOutTotal" class="fw-bold fs-5 text-danger">0</span>
                     </div>
 
-                    <!-- 3. الفرق بينهما (الصافي الكلي) -->
+                    <!-- 3. الفرق بينهما -->
                     <div class="summary-row-vertical bg-primary bg-opacity-10 border border-primary my-2">
                         <span class="fw-bold text-primary fs-6"><i class="fa-solid fa-scale-balanced me-2"></i>الفرق بينهما (صافي الخزينة الكلي):</span>
                         <span id="netDiffTotal" class="fw-bold fs-4 text-primary">0</span>
@@ -276,39 +276,14 @@
 
                     <hr class="my-3">
 
-                    <!-- 4. التفصيلي بعد الفرق بين اجمالي القبض والصرف -->
-                    <h6 class="fw-bold text-muted mb-2"><i class="fa-solid fa-list-check me-1"></i> التفاصيل حسب طريقة الدفع:</h6>
-                    
-                    <div class="row text-center g-2">
-                        <!-- تفاصيل الوارد -->
-                        <div class="col-md-6">
-                            <div class="p-2 border rounded bg-light">
-                                <strong class="d-block text-success border-bottom pb-1 mb-2">تفاصيل الوارد (القبض)</strong>
-                                <div class="d-flex justify-content-between px-2 mb-1"><span>نقدي:</span><strong id="sumInCash">0</strong></div>
-                                <div class="d-flex justify-content-between px-2 mb-1"><span>إنستا باي:</span><strong id="sumInInsta">0</strong></div>
-                                <div class="d-flex justify-content-between px-2"><span>فودافون كاش:</span><strong id="sumInVoda">0</strong></div>
-                            </div>
-                        </div>
-
-                        <!-- تفاصيل المنصرف -->
-                        <div class="col-md-6">
-                            <div class="p-2 border rounded bg-light">
-                                <strong class="d-block text-danger border-bottom pb-1 mb-2">تفاصيل المنصرف (الصرف)</strong>
-                                <div class="d-flex justify-content-between px-2 mb-1"><span>نقدي:</span><strong id="sumOutCash">0</strong></div>
-                                <div class="d-flex justify-content-between px-2 mb-1"><span>إنستا باي:</span><strong id="sumOutInsta">0</strong></div>
-                                <div class="d-flex justify-content-between px-2"><span>فودافون كاش:</span><strong id="sumOutVoda">0</strong></div>
-                            </div>
-                        </div>
-
-                        <!-- صافي المتبقي لكل طريقة -->
-                        <div class="col-12 mt-2">
-                            <div class="p-2 border rounded bg-white shadow-sm">
-                                <strong class="d-block text-dark border-bottom pb-1 mb-2">صافي الأرصدة المتبقية لكل طريقة (الرصيد المرحل)</strong>
-                                <div class="row text-center">
-                                    <div class="col-4 border-end">نقدي: <strong id="netCash" class="pay-cash fs-6">0</strong></div>
-                                    <div class="col-4 border-end">إنستا باي: <strong id="netInsta" class="pay-instapay fs-6">0</strong></div>
-                                    <div class="col-4">فودافون كاش: <strong id="netVoda" class="pay-vodafone fs-6">0</strong></div>
-                                </div>
+                    <!-- 4. صافي الرصيد حسب طريقة الدفع (تم حذف الجزء الموضح في الصورة بناءً على طلبك) -->
+                    <div class="col-12 mt-2">
+                        <div class="p-2 border rounded bg-white shadow-sm">
+                            <strong class="d-block text-dark border-bottom pb-1 mb-2 text-center fs-6">صافي الرصيد</strong>
+                            <div class="row text-center">
+                                <div class="col-4 border-end">نقدي: <strong id="netCash" class="pay-cash fs-6">0</strong></div>
+                                <div class="col-4 border-end">إنستا باي: <strong id="netInsta" class="pay-instapay fs-6">0</strong></div>
+                                <div class="col-4">فودافون كاش: <strong id="netVoda" class="pay-vodafone fs-6">0</strong></div>
                             </div>
                         </div>
                     </div>
@@ -385,16 +360,17 @@
         </div>
     </div>
 
-    <!-- مودال إدارة البنود -->
+    <!-- مودال إدارة وتعديل البنود -->
     <div class="modal fade" id="categoriesModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header"><h5 class="modal-title">إدارة وتخليق البنود</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header"><h5 class="modal-title"><i class="fa-solid fa-tags me-2"></i>إدارة وتعديل البنود</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="input-group mb-3">
                         <input type="text" id="newCatName" class="form-control" placeholder="اسم البند الجديد">
-                        <button class="btn btn-primary" onclick="addCategory()">إضافة</button>
+                        <button class="btn btn-primary fw-bold" onclick="addCategory()">إضافة بند جديد</button>
                     </div>
+                    <h6 class="fw-bold border-bottom pb-2">البنود الحالية (يمكنك تعديل أي بند أو حذفه):</h6>
                     <ul id="categoriesList" class="list-group"></ul>
                 </div>
             </div>
@@ -405,7 +381,7 @@
     <div class="modal fade" id="usersMgmtModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-secondary text-white"><h5 class="modal-title"><i class="fa-solid fa-users-gear me-2"></i>إدارة المستخدمين والصلاحيات</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header bg-secondary text-white"><h5 class="modal-title"><i class="fa-solid fa-users-gear me-2"></i>إدارة المستخدمين وصلاحيات الخزن</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="card p-3 mb-3 bg-light">
                         <h6 class="fw-bold mb-2 text-primary">إضافة مستخدم جديد بخزينة منفصلة</h6>
@@ -492,18 +468,52 @@
             list.innerHTML = '';
             catTargets.forEach(el => el.innerHTML = '');
 
-            categories.forEach(c => {
-                list.innerHTML += `<li class="list-group-item d-flex justify-content-between">${c}</li>`;
+            categories.forEach((c, index) => {
+                list.innerHTML += `
+                    <li class="list-group-item d-flex justify-content-between align-items-center p-2">
+                        <span class="fw-bold">${c}</span>
+                        <div>
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editCategory(${index})"><i class="fa-solid fa-pen"></i> تعديل</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${index})"><i class="fa-solid fa-trash"></i> حذف</button>
+                        </div>
+                    </li>`;
                 catTargets.forEach(el => el.innerHTML += `<option value="${c}">${c}</option>`);
             });
         }
 
         function addCategory() {
-            const name = document.getElementById('newCatName').value;
+            const name = document.getElementById('newCatName').value.trim();
             if (name) {
+                if(categories.includes(name)) return alert('هذا البند موجود بالفعل');
                 categories.push(name);
                 localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
                 document.getElementById('newCatName').value = '';
+                loadCategories();
+            }
+        }
+
+        function editCategory(index) {
+            const oldVal = categories[index];
+            const newVal = prompt('تعديل اسم البند:', oldVal);
+            if (newVal && newVal.trim() !== '') {
+                categories[index] = newVal.trim();
+                localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
+                
+                // تحديث البند المكتوب سابقاً في الحركات المسجلة
+                rawTransactions.forEach(tx => {
+                    if (tx.category === oldVal) tx.category = newVal.trim();
+                });
+                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+
+                loadCategories();
+                applyFilters();
+            }
+        }
+
+        function deleteCategory(index) {
+            if (confirm(`هل أنت تأكد من حذف البند (${categories[index]})؟`)) {
+                categories.splice(index, 1);
+                localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
                 loadCategories();
             }
         }
@@ -591,7 +601,6 @@
             let filtered = [...rawTransactions];
             const currentDate = document.getElementById('globalDateInput').value;
 
-            // تحديد نطاق الخزينة حسب المستخدم والصلاحيات
             if (currentUser && currentUser.role !== 'admin') {
                 filtered = filtered.filter(x => x.created_by === currentUser.username);
             } else if (currentUser && currentUser.role === 'admin') {
@@ -664,20 +673,12 @@
             let netVoda = sumInVoda - sumOutVoda;
             let netDiffTotal = totalIn - totalOut;
 
-            // تحديث قيم ملخص الخزينة العمودي الشامل
+            // تحديث قيم ملخص الخزينة
             document.getElementById('sumInTotal').innerText = totalIn.toLocaleString();
             document.getElementById('sumOutTotal').innerText = totalOut.toLocaleString();
             document.getElementById('netDiffTotal').innerText = netDiffTotal.toLocaleString();
 
-            // التفاصيل أسفل الفرق
-            document.getElementById('sumInCash').innerText = sumInCash.toLocaleString();
-            document.getElementById('sumInInsta').innerText = sumInInsta.toLocaleString();
-            document.getElementById('sumInVoda').innerText = sumInVoda.toLocaleString();
-
-            document.getElementById('sumOutCash').innerText = sumOutCash.toLocaleString();
-            document.getElementById('sumOutInsta').innerText = sumOutInsta.toLocaleString();
-            document.getElementById('sumOutVoda').innerText = sumOutVoda.toLocaleString();
-
+            // صافي الرصيد
             document.getElementById('netCash').innerText = netCash.toLocaleString();
             document.getElementById('netInsta').innerText = netInsta.toLocaleString();
             document.getElementById('netVoda').innerText = netVoda.toLocaleString();
