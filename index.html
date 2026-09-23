@@ -667,16 +667,21 @@
         // -------------------------------------------------------------
         // 🔗 إعدادات الاتصال بقاعدة البيانات السحابية Supabase
         // -------------------------------------------------------------
-        const SUPABASE_URL = 'https://ugjtpdimyzaovtuknalt.supabase.co/rest/v1/';
-        const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnanRwZGlteXphb3Z0dWtuYWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxODE4MTIsImV4cCI6MjEwNTc1NzgxMn0.6fy7uyqRDa3WTE19Ov01XtabBg_wfNhpHQZ6q-OATes';
+        const SUPABASE_URL = 'https://placeholder.supabase.co';
+        const SUPABASE_KEY = 'placeholder-key';
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        let supabase = null;
+        try {
+            if (SUPABASE_URL !== 'https://placeholder.supabase.co') {
+                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            }
+        } catch(e) { console.log('Supabase init error'); }
 
         let currentUser = null;
         let todayDateStr = new Date().toISOString().split('T')[0];
-        let rawTransactions = [];
-        let archiveData = [];
-        let trashData = [];
+        let rawTransactions = JSON.parse(localStorage.getItem('gh_local_txs') || '[]');
+        let archiveData = JSON.parse(localStorage.getItem('gh_local_archive') || '[]');
+        let trashData = JSON.parse(localStorage.getItem('gh_local_trash') || '[]');
         let categories = JSON.parse(localStorage.getItem('gh_sec_cats') || '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
         let users = JSON.parse(localStorage.getItem('gh_sec_users') || '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
         let companySettings = JSON.parse(localStorage.getItem('gh_sec_company') || '{"name": "mohamed for computer", "logo": "", "pin": "1234"}');
@@ -692,7 +697,7 @@
 
             if (found) {
                 currentUser = found;
-                // إغلاق شاشة تسجيل الدخول نهائياً وإظهار لوحة التحكم
+                // إخفاء نافذة الدخول تماماً فوراً
                 document.getElementById('loginScreen').style.display = 'none';
                 document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (${currentUser.role === 'admin' ? 'مدير - صلاحية كاملة' : 'خزينة منفصلة'})`;
                 
@@ -735,15 +740,20 @@
             return (userEntered === currentPin);
         }
 
-        // --- ☁️ دوال المزامنة والجلب السحابي من Supabase ---
+        // --- ☁️ دوال الاتصال والجلب مع التوافق المحلي الذكي ---
         async function fetchTransactionsFromCloud() {
-            const { data, error } = await supabase.from('transactions').select('*');
-            if (error) {
-                console.error('Error fetching transactions:', error);
-            } else {
-                rawTransactions = data || [];
-                applyFilters();
+            if (supabase) {
+                try {
+                    const { data, error } = await supabase.from('transactions').select('*');
+                    if (!error && data) {
+                        rawTransactions = data;
+                        applyFilters();
+                        return;
+                    }
+                } catch(e) {}
             }
+            // Fallback محلي في حال عدم ربط السيرفر بعد
+            applyFilters();
         }
 
         async function saveDirectTransaction(type) {
@@ -757,34 +767,38 @@
             if(!amount || amount <= 0) return alert('يرجى إدخال مبلغ صحيح');
 
             const newTx = {
+                id: Date.now(),
                 created_at: selectedDate || todayDateStr,
                 type, amount, category, payment_method: method, description: notes,
                 created_by: currentUser.username
             };
 
-            const { data, error } = await supabase.from('transactions').insert([newTx]).select();
-            if (error) {
-                alert('❌ خطأ في الحفظ السحابي: ' + error.message);
-            } else {
-                document.getElementById(prefix + 'Amount').value = '';
-                document.getElementById(prefix + 'Notes').value = '';
-                await fetchTransactionsFromCloud();
+            if (supabase) {
+                try {
+                    await supabase.from('transactions').insert([{
+                        created_at: newTx.created_at, type, amount, category, payment_method: method, description: notes, created_by: currentUser.username
+                    }]);
+                } catch(e) {}
             }
+
+            rawTransactions.push(newTx);
+            localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
+
+            document.getElementById(prefix + 'Amount').value = '';
+            document.getElementById(prefix + 'Notes').value = '';
+            await fetchTransactionsFromCloud();
         }
 
         async function saveTransactionEdit() {
             const id = parseInt(document.getElementById('editTxId').value);
-            const updatedData = {
-                amount: parseFloat(document.getElementById('editTxAmount').value) || 0,
-                category: document.getElementById('editTxCategory').value,
-                payment_method: document.getElementById('editTxMethod').value,
-                description: document.getElementById('editTxNotes').value
-            };
+            const tx = rawTransactions.find(x => x.id === id);
+            if(tx) {
+                tx.amount = parseFloat(document.getElementById('editTxAmount').value) || 0;
+                tx.category = document.getElementById('editTxCategory').value;
+                tx.payment_method = document.getElementById('editTxMethod').value;
+                tx.description = document.getElementById('editTxNotes').value;
 
-            const { error } = await supabase.from('transactions').update(updatedData).eq('id', id);
-            if (error) {
-                alert('❌ خطأ في التعديل السحابي: ' + error.message);
-            } else {
+                localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
                 bootstrap.Modal.getInstance(document.getElementById('editTxModal')).hide();
                 await fetchTransactionsFromCloud();
             }
@@ -793,12 +807,9 @@
         async function deleteTransaction(txId) {
             if (!verifySecurityPin()) return alert('❌ كلمة المرور غير صحيحة!');
             if(confirm('هل أنت تأكد من حذف هذه الحركة؟')) {
-                const { error } = await supabase.from('transactions').delete().eq('id', txId);
-                if (error) {
-                    alert('❌ خطأ في الحذف السحابي: ' + error.message);
-                } else {
-                    await fetchTransactionsFromCloud();
-                }
+                rawTransactions = rawTransactions.filter(x => x.id !== txId);
+                localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
+                await fetchTransactionsFromCloud();
             }
         }
 
@@ -809,45 +820,47 @@
             const netVoda = parseFloat(document.getElementById('netVoda').innerText.replace(/,/g, ''));
             const netTotal = parseFloat(document.getElementById('netDiffTotal').innerText.replace(/,/g, ''));
 
-            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وحفظها سحابياً وتفريغ اليومية للغد؟`)) {
+            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وحفظها بالأرشيف وتفريغ اليومية للغد؟`)) {
                 const todayTransactions = rawTransactions.filter(x => x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username));
 
-                const archivePayload = {
+                archiveData.push({
+                    id: Date.now(),
                     date: currentDateStr,
                     user_name: currentUser.username,
                     net_cash: netCash, net_insta: netInsta, net_voda: netVoda, net_total: netTotal,
                     transactions: todayTransactions
-                };
-                await supabase.from('archive').insert([archivePayload]);
+                });
+                localStorage.setItem('gh_local_archive', JSON.stringify(archiveData));
 
-                await supabase.from('transactions').delete().eq('created_at', currentDateStr);
+                rawTransactions = rawTransactions.filter(x => !(x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username)));
 
                 let nextDate = new Date(currentDateStr);
                 nextDate.setDate(nextDate.getDate() + 1);
                 let nextDateStr = nextDate.toISOString().split('T')[0];
 
                 if (netTotal > 0) {
-                    await supabase.from('transactions').insert([{
-                        created_at: nextDateStr, type: 'in', amount: netTotal,
+                    rawTransactions.push({
+                        id: Date.now(), created_at: nextDateStr, type: 'in', amount: netTotal,
                         category: 'رصيد مرحل إجمالي', payment_method: 'cash',
                         description: 'إجمالي الرصيد المرحل الكلي من يوم ' + currentDateStr, created_by: currentUser.username
-                    }]);
+                    });
                 }
+
+                localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
 
                 todayDateStr = nextDateStr;
                 document.getElementById('globalDateInput').value = nextDateStr;
-                alert('تمت الأرشفة السحابية بنجاح وبدء يومية جديدة بحساب فارغ!');
+                alert('تمت الأرشفة بنجاح وبدء يومية جديدة بحساب فارغ!');
                 await fetchTransactionsFromCloud();
             }
         }
 
         async function loadArchive() {
-            const { data } = await supabase.from('archive').select('*');
             const tbody = document.getElementById('archiveTableBody');
             tbody.innerHTML = '';
-            (data || []).forEach((item) => {
+            archiveData.forEach((item, index) => {
                 let adminDeleteBtn = (currentUser && currentUser.role === 'admin') 
-                    ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="moveToTrash(${item.id})" title="نقل لسلة المحذوفات"><i class="fa-solid fa-trash"></i></button>` 
+                    ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="moveToTrash(${index})" title="نقل لسلة المحذوفات"><i class="fa-solid fa-trash"></i></button>` 
                     : '';
 
                 tbody.innerHTML += `<tr>
@@ -865,60 +878,52 @@
             });
         }
 
-        async function moveToTrash(archiveId) {
+        async function moveToTrash(index) {
             if (!verifySecurityPin()) return alert('❌ كلمة المرور غير صحيحة!');
             if(confirm('هل أنت تأكد من نقل هذه الخزينة إلى سلة المحذوفات؟')) {
-                const { data } = await supabase.from('archive').select('*').eq('id', archiveId).single();
-                if (data) {
-                    await supabase.from('trash').insert([{
-                        date: data.date,
-                        user_name: data.user_name,
-                        net_total: data.net_total,
-                        transactions: data.transactions
-                    }]);
-                    await supabase.from('archive').delete().eq('id', archiveId);
-                    await loadArchive();
-                }
+                const deletedItem = archiveData.splice(index, 1)[0];
+                trashData.push(deletedItem);
+                
+                localStorage.setItem('gh_local_archive', JSON.stringify(archiveData));
+                localStorage.setItem('gh_local_trash', JSON.stringify(trashData));
+                
+                loadArchive();
             }
         }
 
         async function loadTrash() {
-            const { data } = await supabase.from('trash').select('*');
             const tbody = document.getElementById('trashTableBody');
             tbody.innerHTML = '';
-            (data || []).forEach((item) => {
+            trashData.forEach((item, index) => {
                 tbody.innerHTML += `<tr>
                     <td>${item.date}</td>
                     <td>${item.user_name}</td>
                     <td class="fw-bold">${(item.net_total || 0).toLocaleString()}</td>
                     <td>
-                        <button class="btn btn-sm btn-success me-1" onclick="restoreFromTrash(${item.id})"><i class="fa-solid fa-rotate-left me-1"></i>استعادة الأرشيف</button>
-                        <button class="btn btn-sm btn-danger" onclick="permanentlyDeleteTrash(${item.id})"><i class="fa-solid fa-xmark me-1"></i>حذف نهائي</button>
+                        <button class="btn btn-sm btn-success me-1" onclick="restoreFromTrash(${index})"><i class="fa-solid fa-rotate-left me-1"></i>استعادة</button>
+                        <button class="btn btn-sm btn-danger" onclick="permanentlyDeleteTrash(${index})"><i class="fa-solid fa-xmark me-1"></i>حذف نهائي</button>
                     </td>
                 </tr>`;
             });
         }
 
-        async function restoreFromTrash(trashId) {
-            const { data } = await supabase.from('trash').select('*').eq('id', trashId).single();
-            if (data) {
-                await supabase.from('archive').insert([{
-                    date: data.date,
-                    user_name: data.user_name,
-                    net_total: data.net_total,
-                    transactions: data.transactions
-                }]);
-                await supabase.from('trash').delete().eq('id', trashId);
-                await loadTrash();
-                alert('تمت استعادة الخزينة بنجاح إلى الأرشيف الرئيسي!');
-            }
+        async function restoreFromTrash(index) {
+            const restoredItem = trashData.splice(index, 1)[0];
+            archiveData.push(restoredItem);
+
+            localStorage.setItem('gh_local_archive', JSON.stringify(archiveData));
+            localStorage.setItem('gh_local_trash', JSON.stringify(trashData));
+
+            loadTrash();
+            alert('تمت استعادة الخزينة بنجاح!');
         }
 
-        async function permanentlyDeleteTrash(trashId) {
+        async function permanentlyDeleteTrash(index) {
             if (!verifySecurityPin()) return alert('❌ كلمة المرور غير صحيحة!');
-            if(confirm('تنبيه أمني: هل أنت تأكد من حذف هذه الخزينة نهائياً من السيرفر؟')) {
-                await supabase.from('trash').delete().eq('id', trashId);
-                await loadTrash();
+            if(confirm('تنبيه: هل أنت تأكد من الحذف النهائي؟')) {
+                trashData.splice(index, 1);
+                localStorage.setItem('gh_local_trash', JSON.stringify(trashData));
+                loadTrash();
             }
         }
 
