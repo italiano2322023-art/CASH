@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الخزينة الإلكتروني</title>
+    <title>نظام إدارة الخزينة - GitHub Pages</title>
     <!-- Bootstrap 5 RTL -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
@@ -75,16 +75,17 @@
                 <small class="text-muted" id="userInfoDisplay">المستخدم الحالي: -</small>
             </div>
             <div class="d-flex align-items-center gap-3">
-                <!-- عرض تاريخ اليوم -->
-                <div class="bg-secondary px-3 py-1 rounded text-white fw-bold">
-                    <i class="fa-regular fa-calendar-days me-1"></i>
-                    تاريخ اليوم: <span id="todayDateDisplay"></span>
+                <!-- اختيار وتعديل تاريخ اليوم بالكامل -->
+                <div class="bg-secondary px-3 py-1 rounded text-white d-flex align-items-center gap-2">
+                    <i class="fa-regular fa-calendar-days"></i>
+                    <span class="small fw-bold">التاريخ:</span>
+                    <input type="date" id="globalDateInput" class="form-control form-control-sm border-0 py-0 px-1 bg-white text-dark fw-bold" style="width: 140px;">
                 </div>
 
                 <!-- اختيار الخزينة (للأدمن فقط) -->
                 <div id="adminSafeSelectorGroup" style="display: none;">
                     <label class="small text-warning me-1">عرض خزينة:</label>
-                    <select id="safeFilterSelect" class="form-select form-select-sm d-inline-block w-auto" onchange="loadTransactions()">
+                    <select id="safeFilterSelect" class="form-select form-select-sm d-inline-block w-auto" onchange="applyFilters()">
                         <option value="ALL">كل الخزائن (الكل)</option>
                     </select>
                 </div>
@@ -95,7 +96,6 @@
         <!-- شريط الأزرار والأيقونات المستقلة -->
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
             <div class="d-flex gap-2">
-                <!-- أيقونة الفلترة المنفصلة -->
                 <button class="btn btn-primary fw-bold" data-bs-toggle="modal" data-bs-target="#filterModal">
                     <i class="fa-solid fa-filter me-1"></i> الفلترة والبحث المتقدم
                 </button>
@@ -110,7 +110,6 @@
             </div>
 
             <div class="d-flex gap-2">
-                <!-- أيقونة عرض شكل الخزينة قبل التصدير -->
                 <button class="btn btn-warning fw-bold text-dark" data-bs-toggle="modal" data-bs-target="#previewModal" onclick="generatePreview()">
                     <i class="fa-solid fa-eye me-1"></i> معاينة شكل الخزينة
                 </button>
@@ -118,11 +117,11 @@
             </div>
         </div>
 
-        <!-- شاشة إدخال الحركات (قبض وصرف جنب بعض في نفس الشاشة) -->
+        <!-- شاشة إدخال الحركات السريعة (قبض وصرف جنب بعض) -->
         <div class="entry-box shadow-sm no-print">
             <h6 class="fw-bold mb-3 border-bottom pb-2 text-primary"><i class="fa-solid fa-pen-to-square me-1"></i> إدخال حركات الخزينة السريعة</h6>
             <div class="row g-3">
-                <!-- قسم إدخال القبض (الوارد) -->
+                <!-- قسم إدخال القبض -->
                 <div class="col-md-6 border-end">
                     <div class="bg-success text-white p-1 px-2 rounded mb-2 fw-bold text-center">حركة قبض (+ وارد)</div>
                     <div class="row g-2">
@@ -146,7 +145,7 @@
                     </div>
                 </div>
 
-                <!-- قسم إدخال الصرف (المنصرف) -->
+                <!-- قسم إدخال الصرف -->
                 <div class="col-md-6">
                     <div class="bg-danger text-white p-1 px-2 rounded mb-2 fw-bold text-center">حركة صرف (- منصرف)</div>
                     <div class="row g-2">
@@ -215,7 +214,7 @@
                                 </tr>
                             </thead>
                             <tbody id="ledgerTableBody">
-                                <!-- البيانات تنزل هنا -->
+                                <!-- البيانات تظهر هنا -->
                             </tbody>
                         </table>
                     </div>
@@ -224,7 +223,7 @@
         </div>
     </div>
 
-    <!-- نافذة الفلترة والبحث المنفصلة (Modal) -->
+    <!-- نافذة الفلترة والبحث -->
     <div class="modal fade" id="filterModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -261,7 +260,7 @@
         </div>
     </div>
 
-    <!-- نافذة معاينة الخزينة قبل التصدير -->
+    <!-- نافذة معاينة شكل الخزينة -->
     <div class="modal fade" id="previewModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -323,19 +322,13 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        const SUPABASE_URL = "https://hrcdvpkeybdegjsbnqvu.supabase.co";
-        const SUPABASE_KEY = "ضع_مفتاح_anon_public_هنا";
-        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
         let currentUser = null;
-        let rawTransactions = [];
-        let categories = ["عام", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"];
-        let users = [
-            { username: "admin", pass: "123456", role: "admin" },
-            { username: "mohamed", pass: "123", role: "user" }
-        ];
+        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs') || '[]');
+        let categories = JSON.parse(localStorage.getItem('gh_treasury_cats') || '["عام", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
+        let users = JSON.parse(localStorage.getItem('gh_treasury_users') || '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
 
-        document.getElementById('todayDateDisplay').innerText = new Date().toISOString().split('T')[0];
+        // ضبط التاريخ الحالي
+        document.getElementById('globalDateInput').value = new Date().toISOString().split('T')[0];
 
         function handleLogin() {
             const u = document.getElementById('loginUser').value;
@@ -354,7 +347,7 @@
                 }
                 
                 loadCategories();
-                loadTransactions();
+                applyFilters();
             } else {
                 alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
             }
@@ -390,6 +383,7 @@
             const name = document.getElementById('newCatName').value;
             if (name) {
                 categories.push(name);
+                localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
                 document.getElementById('newCatName').value = '';
                 loadCategories();
             }
@@ -401,6 +395,7 @@
             const r = document.getElementById('newUserRole').value;
             if(u && p) {
                 users.push({ username: u, pass: p, role: r });
+                localStorage.setItem('gh_treasury_users', JSON.stringify(users));
                 alert('تمت إضافة المستخدم بنجاح');
                 updateSafeSelector();
                 document.getElementById('newUsername').value = '';
@@ -408,32 +403,30 @@
             }
         }
 
-        async function saveDirectTransaction(type) {
+        function saveDirectTransaction(type) {
             const prefix = type === 'in' ? 'in' : 'out';
             const amount = parseFloat(document.getElementById(prefix + 'Amount').value);
             const category = document.getElementById(prefix + 'Category').value;
             const method = document.getElementById(prefix + 'Method').value;
             const notes = document.getElementById(prefix + 'Notes').value;
+            const selectedDate = document.getElementById('globalDateInput').value;
 
             if(!amount || amount <= 0) return alert('يرجى إدخال مبلغ صحيح');
 
             const newTx = {
-                created_at: new Date().toISOString().split('T')[0],
+                id: Date.now(),
+                created_at: selectedDate || new Date().toISOString().split('T')[0],
                 type, amount, category, payment_method: method, description: notes,
                 created_by: currentUser.username
             };
 
-            await db.from('transactions').insert([newTx]);
-            
+            // حفظ مباشر وموثوق في التخزين المحلي لـ GitHub Pages
+            rawTransactions.push(newTx);
+            localStorage.setItem('gh_treasury_txs', JSON.stringify(rawTransactions));
+
             document.getElementById(prefix + 'Amount').value = '';
             document.getElementById(prefix + 'Notes').value = '';
             
-            loadTransactions();
-        }
-
-        async function loadTransactions() {
-            let { data } = await db.from('transactions').select('*');
-            rawTransactions = data || [];
             applyFilters();
         }
 
@@ -447,9 +440,9 @@
         function applyFilters() {
             let filtered = [...rawTransactions];
 
-            if (currentUser.role !== 'admin') {
+            if (currentUser && currentUser.role !== 'admin') {
                 filtered = filtered.filter(x => x.created_by === currentUser.username);
-            } else {
+            } else if (currentUser && currentUser.role === 'admin') {
                 const selectedSafe = document.getElementById('safeFilterSelect').value;
                 if (selectedSafe !== 'ALL') filtered = filtered.filter(x => x.created_by === selectedSafe);
             }
@@ -513,9 +506,8 @@
             document.getElementById('statCash').innerText = cashOnly.toLocaleString();
         }
 
-        // إنشاء معاينة التقرير
         function generatePreview() {
-            document.getElementById('previewDate').innerText = new Date().toISOString().split('T')[0];
+            document.getElementById('previewDate').innerText = document.getElementById('globalDateInput').value;
             document.getElementById('previewUser').innerText = currentUser ? currentUser.username : '-';
             const tableHTML = document.querySelector('.table-responsive').innerHTML;
             document.getElementById('previewTableContainer').innerHTML = tableHTML;
