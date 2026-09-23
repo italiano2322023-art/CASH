@@ -276,7 +276,7 @@
 
                     <hr class="my-3">
 
-                    <!-- 4. صافي الرصيد حسب طريقة الدفع (تم حذف الجزء الموضح في الصورة بناءً على طلبك) -->
+                    <!-- 4. صافي الرصيد حسب طريقة الدفع -->
                     <div class="col-12 mt-2">
                         <div class="p-2 border rounded bg-white shadow-sm">
                             <strong class="d-block text-dark border-bottom pb-1 mb-2 text-center fs-6">صافي الرصيد</strong>
@@ -499,7 +499,6 @@
                 categories[index] = newVal.trim();
                 localStorage.setItem('gh_treasury_cats', JSON.stringify(categories));
                 
-                // تحديث البند المكتوب سابقاً في الحركات المسجلة
                 rawTransactions.forEach(tx => {
                     if (tx.category === oldVal) tx.category = newVal.trim();
                 });
@@ -673,12 +672,12 @@
             let netVoda = sumInVoda - sumOutVoda;
             let netDiffTotal = totalIn - totalOut;
 
-            // تحديث قيم ملخص الخزينة
+            // تحديث إجماليات ملخص الخزينة
             document.getElementById('sumInTotal').innerText = totalIn.toLocaleString();
             document.getElementById('sumOutTotal').innerText = totalOut.toLocaleString();
             document.getElementById('netDiffTotal').innerText = netDiffTotal.toLocaleString();
 
-            // صافي الرصيد
+            // صافي الرصيد المتبقي
             document.getElementById('netCash').innerText = netCash.toLocaleString();
             document.getElementById('netInsta').innerText = netInsta.toLocaleString();
             document.getElementById('netVoda').innerText = netVoda.toLocaleString();
