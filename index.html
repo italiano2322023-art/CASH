@@ -45,18 +45,17 @@
         .summary-box {
             background-color: #ffffff;
             border: 1px solid #000;
-            padding: 12px;
+            padding: 15px;
             border-radius: 6px;
             margin-top: 15px;
         }
 
-        .summary-title {
-            font-weight: bold;
-            text-align: center;
-            background-color: #f0f0f0;
-            padding: 4px;
-            border-bottom: 1px solid #000;
-            margin-bottom: 8px;
+        .summary-row {
+            padding: 6px 0;
+            border-bottom: 1px solid #eee;
+        }
+        .summary-row:last-child {
+            border-bottom: none;
         }
 
         @media print {
@@ -243,40 +242,63 @@
                                 </tr>
                             </thead>
                             <tbody id="ledgerTableBody">
-                                <!-- البيانات تظهر مرتبة تلقائياً بدون أسطر فارغة -->
+                                <!-- البيانات تظهر مرتبة تلقائياً -->
                             </tbody>
                         </table>
                     </div>
                 </div>
 
-                <!-- التقرير المجمع والمنفصل للطباعة وتدقيق الخزينة -->
+                <!-- الإجماليات أسفل الخزينة مرتبة حرفياً كما طلبت -->
                 <div class="summary-box">
-                    <div class="summary-title">ملخص وإجماليات الخزينة (حسب وسيلة الدفع والأرصدة المرحالة)</div>
-                    <div class="row text-center g-2">
-                        <!-- إجماليات المقبوضات والمصروفات -->
-                        <div class="col-md-4 border-end">
-                            <h6 class="fw-bold text-success">إجماليات المقبوضات (الوارد)</h6>
-                            <div>نقدي: <strong id="sumInCash">0</strong></div>
-                            <div>إنستا باي: <strong id="sumInInsta">0</strong></div>
-                            <div>فودافون كاش: <strong id="sumInVoda">0</strong></div>
-                            <div class="border-top mt-1 fw-bold">إجمالي الوارد: <span id="sumInTotal">0</span></div>
-                        </div>
+                    <h6 class="fw-bold text-center border-bottom pb-2 mb-3 bg-light py-1">ملخص الخزينة والإجماليات النهائية</h6>
+                    
+                    <!-- 1. إجمالي الوارد -->
+                    <div class="summary-row d-flex justify-content-between align-items-center">
+                        <span class="fw-bold text-success fs-6"><i class="fa-solid fa-arrow-down-left me-1"></i> إجمالي الوارد:</span>
+                        <span id="sumInTotal" class="fw-bold fs-6 text-success">0</span>
+                    </div>
+                    <div class="d-flex justify-content-around text-muted small pb-2 border-bottom">
+                        <span>نقدي: <strong id="sumInCash">0</strong></span>
+                        <span>إنستا باي: <strong id="sumInInsta">0</strong></span>
+                        <span>فودافون كاش: <strong id="sumInVoda">0</strong></span>
+                    </div>
 
-                        <div class="col-md-4 border-end">
-                            <h6 class="fw-bold text-danger">إجماليات المدفوعات (المنصرف)</h6>
-                            <div>نقدي: <strong id="sumOutCash">0</strong></div>
-                            <div>إنستا باي: <strong id="sumOutInsta">0</strong></div>
-                            <div>فودافون كاش: <strong id="sumOutVoda">0</strong></div>
-                            <div class="border-top mt-1 fw-bold">إجمالي المنصرف: <span id="sumOutTotal">0</span></div>
-                        </div>
+                    <!-- 2. إجمالي المنصرف -->
+                    <div class="summary-row d-flex justify-content-between align-items-center mt-2">
+                        <span class="fw-bold text-danger fs-6"><i class="fa-solid fa-arrow-up-right me-1"></i> إجمالي المنصرف:</span>
+                        <span id="sumOutTotal" class="fw-bold fs-6 text-danger">0</span>
+                    </div>
+                    <div class="d-flex justify-content-around text-muted small pb-2 border-bottom">
+                        <span>نقدي: <strong id="sumOutCash">0</strong></span>
+                        <span>إنستا باي: <strong id="sumOutInsta">0</strong></span>
+                        <span>فودافون كاش: <strong id="sumOutVoda">0</strong></span>
+                    </div>
 
-                        <!-- الأرصدة المنفصلة والمرحلة -->
-                        <div class="col-md-4">
-                            <h6 class="fw-bold text-primary">صافي الأرصدة الحالية (النهائية)</h6>
-                            <div>صافي النقدي: <strong id="netCash" class="pay-cash">0</strong></div>
-                            <div>صافي إنستا باي: <strong id="netInsta" class="pay-instapay">0</strong></div>
-                            <div>صافي فودافون كاش: <strong id="netVoda" class="pay-vodafone">0</strong></div>
-                            <div class="border-top mt-1 fw-bold fs-6">إجمالي رصيد الخزينة: <span id="netTotal">0</span></div>
+                    <!-- 3. الفرق بينهما -->
+                    <div class="summary-row d-flex justify-content-between align-items-center my-2 bg-light px-2 rounded">
+                        <span class="fw-bold text-primary fs-6"><i class="fa-solid fa-calculator me-1"></i> الفرق بينهما (صافي الحركة):</span>
+                        <span id="netDiffTotal" class="fw-bold fs-6 text-primary">0</span>
+                    </div>
+
+                    <!-- 4. تفاصيل الأرصدة المتبقية -->
+                    <div class="row text-center mt-3 pt-2 border-top g-2">
+                        <div class="col-4">
+                            <div class="p-2 border rounded bg-light">
+                                <small class="d-block text-muted">رصيد نقدي</small>
+                                <strong id="netCash" class="pay-cash fs-6">0</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded bg-light">
+                                <small class="d-block text-muted">رصيد إنستا باي</small>
+                                <strong id="netInsta" class="pay-instapay fs-6">0</strong>
+                            </div>
+                        </div>
+                        <div class="col-4">
+                            <div class="p-2 border rounded bg-light">
+                                <small class="d-block text-muted">رصيد فودافون كاش</small>
+                                <strong id="netVoda" class="pay-vodafone fs-6">0</strong>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -298,10 +320,10 @@
                             <tr>
                                 <th>تاريخ الخزينة</th>
                                 <th>اسم الخزينة/المستخدم</th>
-                                <th>صافي النقدي</th>
-                                <th>صافي إنستا</th>
-                                <th>صافي فودافون</th>
-                                <th>الإجمالي المرحل</th>
+                                <th>رصيد نقدي</th>
+                                <th>رصيد إنستا</th>
+                                <th>رصيد فودافون</th>
+                                <th>الإجمالي المرحل للغد</th>
                                 <th>عرض</th>
                             </tr>
                         </thead>
@@ -351,12 +373,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentUser = null;
-        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs_v2') || '[]');
-        let archiveData = JSON.parse(localStorage.getItem('gh_treasury_archive') || '[]');
-        let categories = JSON.parse(localStorage.getItem('gh_treasury_cats') || '["رصيد مرحل سابق", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
+        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs_v3') || '[]');
+        let archiveData = JSON.parse(localStorage.getItem('gh_treasury_archive_v3') || '[]');
+        let categories = JSON.parse(localStorage.getItem('gh_treasury_cats') || '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
         let users = JSON.parse(localStorage.getItem('gh_treasury_users') || '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
 
-        // تحديد التاريخ الحالي تلقائياً
         document.getElementById('globalDateInput').value = new Date().toISOString().split('T')[0];
 
         function handleLogin() {
@@ -447,7 +468,7 @@
             };
 
             rawTransactions.push(newTx);
-            localStorage.setItem('gh_treasury_txs_v2', JSON.stringify(rawTransactions));
+            localStorage.setItem('gh_treasury_txs_v3', JSON.stringify(rawTransactions));
 
             document.getElementById(prefix + 'Amount').value = '';
             document.getElementById(prefix + 'Notes').value = '';
@@ -471,16 +492,14 @@
             renderSortedTable(filtered);
         }
 
-        // دالة الترتيب والعرض بدون ترك أسطر فارغة
         function renderSortedTable(data) {
             document.getElementById('printDate').innerText = document.getElementById('globalDateInput').value;
             document.getElementById('printUser').innerText = currentUser ? currentUser.username : '-';
 
-            // أولاً: فصل الحركات إلى وارد ومنصرف
             let inList = data.filter(x => x.type === 'in');
             let outList = data.filter(x => x.type === 'out');
 
-            // ثانياً: ترتيب الحركات حسب وسيلة الدفع (نقدي = 1، إنستا = 2، فودافون = 3)
+            // ترتيب حسب طريقة الدفع (نقدي 1، إنستا 2، فودافون 3)
             const methodOrder = { 'cash': 1, 'instapay': 2, 'vodafone': 3 };
             
             inList.sort((a, b) => methodOrder[a.payment_method] - methodOrder[b.payment_method]);
@@ -489,10 +508,8 @@
             const tbody = document.getElementById('ledgerTableBody');
             tbody.innerHTML = '';
 
-            // معرفة أيهما أكبر في العدد لمنع وجود أسطر متباعدة
             const maxRows = Math.max(inList.length, outList.length);
 
-            // حساب الإجماليات
             let sumInCash = 0, sumInInsta = 0, sumInVoda = 0;
             let sumOutCash = 0, sumOutInsta = 0, sumOutVoda = 0;
 
@@ -513,13 +530,13 @@
                 }
 
                 tbody.innerHTML += `<tr>
-                    <!-- خلية الوارد -->
+                    <!-- جانب الوارد -->
                     <td class="text-success fw-bold">${inTx ? inTx.amount : ''}</td>
                     <td>${inTx ? inTx.category : ''}</td>
                     <td class="${inTx ? getMethodClass(inTx.payment_method) : ''}">${inTx ? getMethodTitle(inTx.payment_method) : ''}</td>
                     <td>${inTx ? (inTx.description || '') : ''}</td>
 
-                    <!-- خلية المنصرف -->
+                    <!-- جانب المنصرف -->
                     <td class="text-danger fw-bold">${outTx ? outTx.amount : ''}</td>
                     <td>${outTx ? outTx.category : ''}</td>
                     <td class="${outTx ? getMethodClass(outTx.payment_method) : ''}">${outTx ? getMethodTitle(outTx.payment_method) : ''}</td>
@@ -527,36 +544,36 @@
                 </tr>`;
             }
 
-            // تحديث كارت الإجماليات في أسفل الصفحة والطباعة
             let totalIn = sumInCash + sumInInsta + sumInVoda;
             let totalOut = sumOutCash + sumOutInsta + sumOutVoda;
 
             let netCash = sumInCash - sumOutCash;
             let netInsta = sumInInsta - sumOutInsta;
             let netVoda = sumInVoda - sumOutVoda;
-            let netTotal = totalIn - totalOut;
+            let netDiffTotal = totalIn - totalOut;
 
-            // ملء بيانات الجدول التجميعي
+            // تحديث قيم ملخص الخزينة بالإشغال المطلوب
+            document.getElementById('sumInTotal').innerText = totalIn.toLocaleString();
             document.getElementById('sumInCash').innerText = sumInCash.toLocaleString();
             document.getElementById('sumInInsta').innerText = sumInInsta.toLocaleString();
             document.getElementById('sumInVoda').innerText = sumInVoda.toLocaleString();
-            document.getElementById('sumInTotal').innerText = totalIn.toLocaleString();
 
+            document.getElementById('sumOutTotal').innerText = totalOut.toLocaleString();
             document.getElementById('sumOutCash').innerText = sumOutCash.toLocaleString();
             document.getElementById('sumOutInsta').innerText = sumOutInsta.toLocaleString();
             document.getElementById('sumOutVoda').innerText = sumOutVoda.toLocaleString();
-            document.getElementById('sumOutTotal').innerText = totalOut.toLocaleString();
+
+            document.getElementById('netDiffTotal').innerText = netDiffTotal.toLocaleString();
 
             document.getElementById('netCash').innerText = netCash.toLocaleString();
             document.getElementById('netInsta').innerText = netInsta.toLocaleString();
             document.getElementById('netVoda').innerText = netVoda.toLocaleString();
-            document.getElementById('netTotal').innerText = netTotal.toLocaleString();
 
-            // تحديث الكروت الجانبية
+            // الكروت الجانبية
             document.getElementById('statCash').innerText = netCash.toLocaleString();
             document.getElementById('statInsta').innerText = netInsta.toLocaleString();
             document.getElementById('statVodafone').innerText = netVoda.toLocaleString();
-            document.getElementById('statBalance').innerText = netTotal.toLocaleString();
+            document.getElementById('statBalance').innerText = netDiffTotal.toLocaleString();
         }
 
         function getMethodClass(m) {
@@ -573,29 +590,43 @@
             return '';
         }
 
-        // دالة إغلاق الخزينة وترحيل الرصيد لليوم التالي تلقائياً
+        // دالة الترحيل المغلقة للغد مع إضافة سطر "رصيد مرحل إجمالي"
         function closeAndMigrateDay() {
             const currentDateStr = document.getElementById('globalDateInput').value;
             const netCash = parseFloat(document.getElementById('netCash').innerText.replace(/,/g, ''));
             const netInsta = parseFloat(document.getElementById('netInsta').innerText.replace(/,/g, ''));
             const netVoda = parseFloat(document.getElementById('netVoda').innerText.replace(/,/g, ''));
-            const netTotal = parseFloat(document.getElementById('netTotal').innerText.replace(/,/g, ''));
+            const netTotal = parseFloat(document.getElementById('netDiffTotal').innerText.replace(/,/g, ''));
 
-            if(confirm(`هل أنت تأكد من إغلاق خزينة يوم (${currentDateStr}) وترحيل الأرصدة المتبقية لليوم التالي؟`)) {
-                // 1. إضافة للأرشيف
+            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وترحيل الأرصدة (نقدي، إنستا، فودافون) لليوم التالي؟`)) {
+                // حفظ في الأرشيف
                 archiveData.push({
                     date: currentDateStr,
                     user: currentUser.username,
                     netCash, netInsta, netVoda, netTotal
                 });
-                localStorage.setItem('gh_treasury_archive', JSON.stringify(archiveData));
+                localStorage.setItem('gh_treasury_archive_v3', JSON.stringify(archiveData));
 
-                // 2. حساب تاريخ اليوم التالي
+                // حساب تاريخ الغد
                 let nextDate = new Date(currentDateStr);
                 nextDate.setDate(nextDate.getDate() + 1);
                 let nextDateStr = nextDate.toISOString().split('T')[0];
 
-                // 3. إنشاء حركات قبض افتتاحية لليوم التالي
+                // 1. إضافة سطر إجمالي الرصيد المرحل في جانب القبض
+                if (netTotal > 0) {
+                    rawTransactions.push({
+                        id: Date.now(),
+                        created_at: nextDateStr,
+                        type: 'in',
+                        amount: netTotal,
+                        category: 'رصيد مرحل إجمالي',
+                        payment_method: 'cash',
+                        description: 'إجمالي الرصيد المرحل الكلي من يوم ' + currentDateStr,
+                        created_by: currentUser.username
+                    });
+                }
+
+                // 2. ترحيل أرصدة الطرق المنفصلة للغد
                 if (netCash > 0) {
                     rawTransactions.push({ id: Date.now() + 1, created_at: nextDateStr, type: 'in', amount: netCash, category: 'رصيد مرحل سابق', payment_method: 'cash', description: 'رصيد نقدي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
                 }
@@ -606,11 +637,10 @@
                     rawTransactions.push({ id: Date.now() + 3, created_at: nextDateStr, type: 'in', amount: netVoda, category: 'رصيد مرحل سابق', payment_method: 'vodafone', description: 'رصيد فودافون كاش مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
                 }
 
-                localStorage.setItem('gh_treasury_txs_v2', JSON.stringify(rawTransactions));
+                localStorage.setItem('gh_treasury_txs_v3', JSON.stringify(rawTransactions));
 
-                // الانتقال لليوم التالي
                 document.getElementById('globalDateInput').value = nextDateStr;
-                alert('تم إغلاق الخزينة بنجاح وترحيل الرصيد إلى تاريخ: ' + nextDateStr);
+                alert('تم الترحيل بنجاح إلى تاريخ: ' + nextDateStr);
                 applyFilters();
             }
         }
@@ -625,7 +655,7 @@
                     <td class="text-success">${item.netCash.toLocaleString()}</td>
                     <td class="pay-instapay">${item.netInsta.toLocaleString()}</td>
                     <td class="pay-vodafone">${item.netVoda.toLocaleString()}</td>
-                    <td class="fw-bold">${item.netTotal.toLocaleString()}</td>
+                    <td class="fw-bold text-primary">${item.netTotal.toLocaleString()}</td>
                     <td><button class="btn btn-sm btn-outline-primary" onclick="viewArchiveDate('${item.date}')" data-bs-dismiss="modal">عرض الخزينة</button></td>
                 </tr>`;
             });
