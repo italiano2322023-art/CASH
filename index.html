@@ -59,6 +59,13 @@
             align-items: center;
         }
 
+        .company-logo {
+            max-height: 50px;
+            max-width: 150px;
+            object-fit: contain;
+            border-radius: 4px;
+        }
+
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
@@ -90,11 +97,14 @@
     <!-- النافذة الرئيسية -->
     <div class="container-fluid py-3 px-4">
         
-        <!-- الشريط العلوي -->
+        <!-- الشريط العلوي مع اسم الشركة واللوجو -->
         <div class="card bg-dark text-white p-3 mb-3 d-flex flex-row justify-content-between align-items-center rounded-3 no-print">
-            <div>
-                <h4 class="m-0" id="headerCompanyName">mohamed for computer</h4>
-                <small class="text-muted" id="userInfoDisplay">المستخدم الحالي: -</small>
+            <div class="d-flex align-items-center gap-3">
+                <img id="displayCompanyLogo" src="" alt="Logo" class="company-logo bg-white p-1" style="display: none;">
+                <div>
+                    <h4 class="m-0" id="headerCompanyName">mohamed for computer</h4>
+                    <small class="text-muted" id="userInfoDisplay">المستخدم الحالي: -</small>
+                </div>
             </div>
             <div class="d-flex align-items-center gap-3">
                 <!-- اختيار وتعديل التاريخ -->
@@ -118,18 +128,27 @@
         <!-- شريط الأزرار -->
         <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
             <div class="d-flex gap-2">
-                <button class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#categoriesModal">
+                <button class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#companySettingsModal">
+                    <i class="fa-solid fa-building me-1"></i> إعدادات الشركة واللوجو
+                </button>
+                <button class="btn btn-secondary text-white fw-bold" data-bs-toggle="modal" data-bs-target="#categoriesModal">
                     <i class="fa-solid fa-tags me-1"></i> إدارة البنود
                 </button>
-                <button id="btnUsersMgmt" class="btn btn-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#usersMgmtModal" style="display:none;">
-                    <i class="fa-solid fa-users-gear me-1"></i> إدارة المستخدمين وصلاحيات الخزن
+                <button id="btnUsersMgmt" class="btn btn-dark fw-bold" data-bs-toggle="modal" data-bs-target="#usersMgmtModal" style="display:none;">
+                    <i class="fa-solid fa-users-gear me-1"></i> إدارة المستخدمين
                 </button>
-                <button class="btn btn-dark fw-bold" data-bs-toggle="modal" data-bs-target="#archiveModal" onclick="loadArchive()">
+                <button class="btn btn-outline-dark fw-bold" data-bs-toggle="modal" data-bs-target="#archiveModal" onclick="loadArchive()">
                     <i class="fa-solid fa-box-archive me-1"></i> أرشيف الخزن
                 </button>
             </div>
 
             <div class="d-flex gap-2">
+                <!-- زر حفظ الخزينة المؤقت بدون إغلاقها -->
+                <button class="btn btn-primary fw-bold" onclick="saveCurrentTreasuryState()">
+                    <i class="fa-solid fa-floppy-disk me-1"></i> حفظ الخزينة
+                </button>
+                
+                <!-- زر إغلاق الخزينة والأرشفة وتفريغ الشاشة -->
                 <button class="btn btn-warning fw-bold text-dark" onclick="closeAndMigrateDay()">
                     <i class="fa-solid fa-file-export me-1"></i> إغلاق الخزينة وترحيل الرصيد للغد
                 </button>
@@ -195,7 +214,8 @@
 
         <!-- ترويسة الطباعة -->
         <div class="print-only text-center mb-3">
-            <h2>mohamed for computer</h2>
+            <img id="printCompanyLogo" src="" alt="Logo" class="company-logo mb-2" style="display: none;">
+            <h2 id="printCompanyName">mohamed for computer</h2>
             <h4>تقرير حركة الخزينة اليومية</h4>
             <p>التاريخ: <span id="printDate"></span> | المستخدم / الخزينة: <span id="printUser"></span></p>
         </div>
@@ -246,7 +266,7 @@
                                 </tr>
                             </thead>
                             <tbody id="ledgerTableBody">
-                                <!-- البيانات تظهر مرتبة تلقائياً -->
+                                <!-- البيانات تظهر هنا -->
                             </tbody>
                         </table>
                     </div>
@@ -276,7 +296,7 @@
 
                     <hr class="my-3">
 
-                    <!-- 4. صافي الرصيد حسب طريقة الدفع -->
+                    <!-- 4. صافي الرصيد -->
                     <div class="col-12 mt-2">
                         <div class="p-2 border rounded bg-white shadow-sm">
                             <strong class="d-block text-dark border-bottom pb-1 mb-2 text-center fs-6">صافي الرصيد</strong>
@@ -288,6 +308,35 @@
                         </div>
                     </div>
 
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إعدادات الشركة واللوجو -->
+    <div class="modal fade" id="companySettingsModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-building me-2"></i>إعدادات اسم الشركة واللوجو</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">اسم الشركة:</label>
+                        <input type="text" id="companyNameInput" class="form-control" placeholder="اسم الشركة">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">رفع صورة اللوجو:</label>
+                        <input type="file" id="companyLogoFile" class="form-control" accept="image/*" onchange="previewLogoUpload(event)">
+                    </div>
+                    <div class="text-center">
+                        <img id="logoUploadPreview" src="" alt="معاينة اللوجو" class="company-logo border p-1" style="display: none;">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
+                    <button class="btn btn-primary fw-bold" onclick="saveCompanySettings()">حفظ الإعدادات</button>
                 </div>
             </div>
         </div>
@@ -350,7 +399,7 @@
                                 <th>رصيد إنستا</th>
                                 <th>رصيد فودافون</th>
                                 <th>الإجمالي المرحل للغد</th>
-                                <th>عرض</th>
+                                <th>عرض الخزينة</th>
                             </tr>
                         </thead>
                         <tbody id="archiveTableBody"></tbody>
@@ -406,10 +455,11 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         let currentUser = null;
-        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs_v4') || '[]');
-        let archiveData = JSON.parse(localStorage.getItem('gh_treasury_archive_v4') || '[]');
+        let rawTransactions = JSON.parse(localStorage.getItem('gh_treasury_txs_v5') || '[]');
+        let archiveData = JSON.parse(localStorage.getItem('gh_treasury_archive_v5') || '[]');
         let categories = JSON.parse(localStorage.getItem('gh_treasury_cats') || '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
         let users = JSON.parse(localStorage.getItem('gh_treasury_users') || '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
+        let companySettings = JSON.parse(localStorage.getItem('gh_treasury_company') || '{"name": "mohamed for computer", "logo": ""}');
 
         document.getElementById('globalDateInput').value = new Date().toISOString().split('T')[0];
 
@@ -432,6 +482,7 @@
                     document.getElementById('btnUsersMgmt').style.display = 'none';
                 }
                 
+                loadCompanySettings();
                 loadCategories();
                 renderUsersList();
                 applyFilters();
@@ -441,6 +492,49 @@
         }
 
         function logout() { location.reload(); }
+
+        // تحميل وحفظ بيانات الشركة واللوجو
+        function loadCompanySettings() {
+            document.getElementById('headerCompanyName').innerText = companySettings.name;
+            document.getElementById('companyNameInput').value = companySettings.name;
+            document.getElementById('printCompanyName').innerText = companySettings.name;
+
+            if (companySettings.logo) {
+                document.getElementById('displayCompanyLogo').src = companySettings.logo;
+                document.getElementById('displayCompanyLogo').style.display = 'block';
+                document.getElementById('printCompanyLogo').src = companySettings.logo;
+                document.getElementById('printCompanyLogo').style.display = 'inline-block';
+                document.getElementById('logoUploadPreview').src = companySettings.logo;
+                document.getElementById('logoUploadPreview').style.display = 'inline-block';
+            }
+        }
+
+        function previewLogoUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    document.getElementById('logoUploadPreview').src = e.target.result;
+                    document.getElementById('logoUploadPreview').style.display = 'inline-block';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function saveCompanySettings() {
+            const name = document.getElementById('companyNameInput').value;
+            const logoPreview = document.getElementById('logoUploadPreview').src;
+
+            companySettings.name = name || 'mohamed for computer';
+            if (logoPreview && logoPreview.startsWith('data:image')) {
+                companySettings.logo = logoPreview;
+            }
+
+            localStorage.setItem('gh_treasury_company', JSON.stringify(companySettings));
+            loadCompanySettings();
+            bootstrap.Modal.getInstance(document.getElementById('companySettingsModal')).hide();
+            alert('تم حفظ إعدادات الشركة واللوجو بنجاح');
+        }
 
         function updateSafeSelector() {
             const select = document.getElementById('safeFilterSelect');
@@ -502,7 +596,7 @@
                 rawTransactions.forEach(tx => {
                     if (tx.category === oldVal) tx.category = newVal.trim();
                 });
-                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
 
                 loadCategories();
                 applyFilters();
@@ -551,12 +645,18 @@
             };
 
             rawTransactions.push(newTx);
-            localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+            localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
 
             document.getElementById(prefix + 'Amount').value = '';
             document.getElementById(prefix + 'Notes').value = '';
             
             applyFilters();
+        }
+
+        // حفظ الخزينة المؤقت بدون إغلاقها
+        function saveCurrentTreasuryState() {
+            localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
+            alert('تم حفظ حالة الخزينة الحالية بنجاح دون إغلاق اليومية 👍');
         }
 
         function openEditModal(txId) {
@@ -582,7 +682,7 @@
                 tx.payment_method = document.getElementById('editTxMethod').value;
                 tx.description = document.getElementById('editTxNotes').value;
 
-                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
                 bootstrap.Modal.getInstance(document.getElementById('editTxModal')).hide();
                 applyFilters();
             }
@@ -591,7 +691,7 @@
         function deleteTransaction(txId) {
             if(confirm('هل أنت تأكد من حذف هذه الحركة؟')) {
                 rawTransactions = rawTransactions.filter(x => x.id !== txId);
-                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
                 applyFilters();
             }
         }
@@ -703,6 +803,7 @@
             return '';
         }
 
+        // إغلاق الخزينة، أرشفة كاملة، وتفريغ الحركات للجديد
         function closeAndMigrateDay() {
             const currentDateStr = document.getElementById('globalDateInput').value;
             const netCash = parseFloat(document.getElementById('netCash').innerText.replace(/,/g, ''));
@@ -710,18 +811,24 @@
             const netVoda = parseFloat(document.getElementById('netVoda').innerText.replace(/,/g, ''));
             const netTotal = parseFloat(document.getElementById('netDiffTotal').innerText.replace(/,/g, ''));
 
-            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وترحيل الأرصدة المتبقية لليوم التالي؟`)) {
+            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr})، حفظها كاملة بالأرشيف، وتفريغ الجدول لخزينة جديدة؟`)) {
+                // 1. أرشفة الحركات الكاملة للخزينة المغلقة
+                const todayTransactions = rawTransactions.filter(x => x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username));
+
                 archiveData.push({
                     date: currentDateStr,
                     user: currentUser.username,
-                    netCash, netInsta, netVoda, netTotal
+                    netCash, netInsta, netVoda, netTotal,
+                    transactions: todayTransactions
                 });
-                localStorage.setItem('gh_treasury_archive_v4', JSON.stringify(archiveData));
+                localStorage.setItem('gh_treasury_archive_v5', JSON.stringify(archiveData));
 
+                // 2. حساب التاريخ القادم
                 let nextDate = new Date(currentDateStr);
                 nextDate.setDate(nextDate.getDate() + 1);
                 let nextDateStr = nextDate.toISOString().split('T')[0];
 
+                // 3. إضافة حركات الأرصدة المرحالة لليوم التالي
                 if (netTotal > 0) {
                     rawTransactions.push({
                         id: Date.now(), created_at: nextDateStr, type: 'in', amount: netTotal,
@@ -734,10 +841,11 @@
                 if (netInsta > 0) rawTransactions.push({ id: Date.now() + 2, created_at: nextDateStr, type: 'in', amount: netInsta, category: 'رصيد مرحل سابق', payment_method: 'instapay', description: 'رصيد إنستا باي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
                 if (netVoda > 0) rawTransactions.push({ id: Date.now() + 3, created_at: nextDateStr, type: 'in', amount: netVoda, category: 'رصيد مرحل سابق', payment_method: 'vodafone', description: 'رصيد فودافون كاش مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
 
-                localStorage.setItem('gh_treasury_txs_v4', JSON.stringify(rawTransactions));
+                localStorage.setItem('gh_treasury_txs_v5', JSON.stringify(rawTransactions));
 
+                // 4. تغيير التاريخ لليوم الجديد وتحديث العرض ليكون فارغاً وجاهزاً
                 document.getElementById('globalDateInput').value = nextDateStr;
-                alert('تم الترحيل بنجاح إلى تاريخ: ' + nextDateStr);
+                alert('تمت أرشفة الخزينة وإغلاقها بنجاح! وتفريغ الجدول لبدء خزينة تاريخ: ' + nextDateStr);
                 applyFilters();
             }
         }
