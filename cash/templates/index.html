@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>نظام الخزينة المتقدم multi-User Treasury</title>
+    <!-- Bootstrap 5 RTL -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        :root {
+            --vodafone-red: #d9534f;
+            --instapay-navy: #000080;
+        }
+        body { background-color: #f0f2f5; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
+        
+        .pay-vodafone { color: var(--vodafone-red) !important; font-weight: bold; }
+        .pay-instapay { color: var(--instapay-navy) !important; font-weight: bold; }
+        .pay-cash { color: #28a745 !important; font-weight: bold; }
+
+        .stat-card {
+            border-radius: 10px;
+            padding: 15px;
+            color: white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+            margin-bottom: 15px;
+        }
+        .bg-vodafone-card { background: #fff; border-right: 6px solid var(--vodafone-red); color: var(--vodafone-red); }
+        .bg-instapay-card { background: #fff; border-right: 6px solid var(--instapay-navy); color: var(--instapay-navy); }
+        
+        .login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(15, 23, 42, 0.95); z-index: 9999;
+            display: flex; justify-content: center; align-items: center;
+        }
+        .entry-row { background-color: #eef2f7; }
+        .entry-row input, .entry-row select { font-size: 0.85rem; padding: 4px 8px; }
+    </style>
+</head>
+<body>
+
+    <!-- شاشة تسجيل الدخول -->
+    <div id="loginScreen" class="login-overlay">
+        <div class="card p-4 shadow-lg" style="width: 380px;">
+            <h3 class="text-center mb-3 fw-bold text-primary"><i class="fa-solid fa-vault me-2"></i>تسجيل الدخول</h3>
+            <div class="mb-3">
+                <label class="form-label">اسم المستخدم</label>
+                <input type="text" id="loginUser" class="form-control" placeholder="اسم المستخدم">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">كلمة المرور</label>
+                <input type="password" id="loginPass" class="form-control" placeholder="••••••••">
+            </div>
+            <button class="btn btn-primary w-100 fw-bold" onclick="handleLogin()">دخول للنظام</button>
+        </div>
+    </div>
+
+    <!-- النافذة الرئيسية -->
+    <div class="container-fluid py-3 px-4">
+        
+        <!-- الشريط العلوي -->
+        <div class="card bg-dark text-white p-3 mb-3 d-flex flex-row justify-content-between align-items-center rounded-3">
+            <div>
+                <h4 class="m-0" id="headerCompanyName">mohamed for computer</h4>
+                <small class="text-muted" id="userInfoDisplay">المستخدم الحالي: -</small>
+            </div>
+            <div class="d-flex align-items-center gap-3">
+                <!-- عرض تاريخ اليوم -->
+                <div class="bg-secondary px-3 py-1 rounded text-white fw-bold">
+                    <i class="fa-regular fa-calendar-days me-1"></i>
+                    <span id="todayDateDisplay"></span>
+                </div>
+
+                <!-- اختيار الخزينة (للأدمن فقط) -->
+                <div id="adminSafeSelectorGroup" style="display: none;">
+                    <label class="small text-warning me-1">عرض خزينة:</label>
+                    <select id="safeFilterSelect" class="form-select form-select-sm d-inline-block w-auto" onchange="loadTransactions()">
+                        <option value="ALL">كل الخزائن (الكل)</option>
+                    </select>
+                </div>
+                <button class="btn btn-outline-danger btn-sm" onclick="logout()"><i class="fa-solid fa-right-from-bracket"></i> خروج</button>
+            </div>
+        </div>
+
+        <!-- أزرار الإجراءات -->
+        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+            <div class="d-flex gap-2">
+                <!-- أيقونة الفلترة الشاملة -->
+                <button class="btn btn-outline-primary fw-bold" data-bs-toggle="modal" data-bs-target="#filterModal">
+                    <i class="fa-solid fa-filter me-1"></i> الفلترة والبحث المتقدم
+                </button>
+                <button class="btn btn-info text-white fw-bold" data-bs-toggle="modal" data-bs-target="#categoriesModal">
+                    <i class="fa-solid fa-tags me-1"></i> إدارة البنود
+                </button>
+                <button id="btnUsersMgmt" class="btn btn-secondary fw-bold" data-bs-toggle="modal" data-bs-target="#usersMgmtModal" style="display:none;">
+                    <i class="fa-solid fa-users-gear me-1"></i> إدارة المستخدمين
+                </button>
+            </div>
+            <div>
+                <button class="btn btn-success fw-bold" onclick="exportExcel()"><i class="fa-solid fa-file-excel me-1"></i> تصدير Excel</button>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- الكروت الإحصائية -->
+            <div class="col-lg-3">
+                <div class="stat-card bg-info text-dark fw-bold"><div>إجمالي الوارد (+)</div><h3 id="statIn">0</h3></div>
+                <div class="stat-card bg-danger fw-bold"><div>إجمالي المنصرف (-)</div><h3 id="statOut">0</h3></div>
+                <div class="stat-card bg-dark fw-bold"><div>الرصيد المتبقي</div><h3 id="statBalance">0</h3></div>
+                
+                <div class="stat-card bg-vodafone-card">
+                    <div>محفظة فودافون كاش</div>
+                    <h3 id="statVodafone" class="pay-vodafone">0</h3>
+                </div>
+                <div class="stat-card bg-instapay-card">
+                    <div>إنستا باي (InstaPay)</div>
+                    <h3 id="statInsta" class="pay-instapay">0</h3>
+                </div>
+                <div class="stat-card bg-warning text-dark fw-bold">
+                    <div>صافي الرصيد النقدي (كاش)</div>
+                    <h3 id="statCash">0</h3>
+                </div>
+            </div>
+
+            <!-- جدول الحركات الشامل -->
+            <div class="col-lg-9">
+                <div class="card shadow-sm">
+                    <div class="card-body p-0 table-responsive">
+                        <table class="table table-bordered text-center align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th colspan="4" class="table-success py-2">الوارد (+)</th>
+                                    <th colspan="4" class="table-danger py-2">المنصرف (-)</th>
+                                </tr>
+                                <tr class="table-light">
+                                    <th style="width: 12%;">المبلغ</th>
+                                    <th style="width: 13%;">البند</th>
+                                    <th style="width: 12%;">طريقة الدفع</th>
+                                    <th>البيان/الملاحظات</th>
+                                    <th style="width: 12%;">المبلغ</th>
+                                    <th style="width: 13%;">البند</th>
+                                    <th style="width: 12%;">طريقة الدفع</th>
+                                    <th>البيان/الملاحظات</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- الصف المخصص للإدخال الفوري المباشر من الجدول -->
+                                <tr class="entry-row">
+                                    <!-- إدخال الوارد -->
+                                    <td><input type="number" id="inAmount" class="form-control text-center" placeholder="0.00"></td>
+                                    <td><select id="inCategory" class="form-select cat-select-target"></select></td>
+                                    <td>
+                                        <select id="inMethod" class="form-select">
+                                            <option value="cash">كاش</option>
+                                            <option value="vodafone">فودافون كاش</option>
+                                            <option value="instapay">إنستا باي</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="text" id="inNotes" class="form-control" placeholder="ملاحظات...">
+                                            <button class="btn btn-sm btn-success fw-bold" onclick="saveDirectTransaction('in')">حفظ</button>
+                                        </div>
+                                    </td>
+
+                                    <!-- إدخال المنصرف -->
+                                    <td><input type="number" id="outAmount" class="form-control text-center" placeholder="0.00"></td>
+                                    <td><select id="outCategory" class="form-select cat-select-target"></select></td>
+                                    <td>
+                                        <select id="outMethod" class="form-select">
+                                            <option value="cash">كاش</option>
+                                            <option value="vodafone">فودافون كاش</option>
+                                            <option value="instapay">إنستا باي</option>
+                                        </select>
+                                    </td>
+                                    <td>
+                                        <div class="input-group">
+                                            <input type="text" id="outNotes" class="form-control" placeholder="ملاحظات...">
+                                            <button class="btn btn-sm btn-danger fw-bold" onclick="saveDirectTransaction('out')">حفظ</button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tbody id="ledgerTableBody">
+                                <!-- الحركات التاريخية تظهر هنا -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- نافذة الفلترة المتقدمة (Modal) -->
+    <div class="modal fade" id="filterModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fa-solid fa-filter text-primary me-2"></i>الفلترة والبحث المتقدم</h5>
+                    <button class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">من تاريخ:</label>
+                        <input type="date" id="filterFromDate" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">إلى تاريخ:</label>
+                        <input type="date" id="filterToDate" class="form-control">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">تصفية حسب البند:</label>
+                        <select id="filterCategory" class="form-select">
+                            <option value="">كل البنود</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">طريقة الدفع:</label>
+                        <select id="filterMethod" class="form-select">
+                            <option value="">الكل</option>
+                            <option value="cash">كاش (نقدي)</option>
+                            <option value="vodafone">فودافون كاش</option>
+                            <option value="instapay">إنستا باي</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-secondary" onclick="resetFilters()">إعادة ضبط</button>
+                    <button class="btn btn-primary fw-bold" data-bs-dismiss="modal" onclick="applyFilters()">تطبيق الفلتر</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إدارة البنود -->
+    <div class="modal fade" id="categoriesModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">تخليق وإدارة البنود</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <input type="text" id="newCatName" class="form-control" placeholder="اسم البند الجديد">
+                        <button class="btn btn-primary" onclick="addCategory()">إضافة بند</button>
+                    </div>
+                    <h6>البنود الحالية:</h6>
+                    <ul id="categoriesList" class="list-group"></ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- مودال إدارة المستخدمين -->
+    <div class="modal fade" id="usersMgmtModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header"><h5 class="modal-title">إدارة المستخدمين والباسوردات</h5><button class="btn-close" data-bs-dismiss="modal"></button></div>
+                <div class="modal-body">
+                    <div class="mb-2"><input type="text" id="newUsername" class="form-control" placeholder="اسم المستخدم"></div>
+                    <div class="mb-2"><input type="password" id="newUserPass" class="form-control" placeholder="كلمة المرور"></div>
+                    <div class="mb-2">
+                        <select id="newUserRole" class="form-select">
+                            <option value="user">مستخدم / أمين خزينة مستقلة</option>
+                            <option value="admin">مدير (أدمن)</option>
+                        </select>
+                    </div>
+                    <button class="btn btn-success w-100 mb-3" onclick="addUser()">إضافة المستخدم</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const SUPABASE_URL = "https://hrcdvpkeybdegjsbnqvu.supabase.co";
+        const SUPABASE_KEY = "ضع_مفتاح_anon_public_هنا";
+        const db = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        let rawTransactions = [];
+        let categories = ["عام", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"];
+        let users = [
+            { username: "admin", pass: "123456", role: "admin" },
+            { username: "mohamed", pass: "123", role: "user" }
+        ];
+
+        // ضبط تاريخ اليوم
+        document.getElementById('todayDateDisplay').innerText = new Date().toISOString().split('T')[0];
+
+        function handleLogin() {
+            const u = document.getElementById('loginUser').value;
+            const p = document.getElementById('loginPass').value;
+            const found = users.find(x => x.username === u && x.pass === p);
+
+            if (found) {
+                currentUser = found;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (${currentUser.role === 'admin' ? 'مدير' : 'خزينة مستقلة'})`;
+                
+                if (currentUser.role === 'admin') {
+                    document.getElementById('adminSafeSelectorGroup').style.display = 'block';
+                    document.getElementById('btnUsersMgmt').style.display = 'inline-block';
+                    updateSafeSelector();
+                }
+                
+                loadCategories();
+                loadTransactions();
+            } else {
+                alert('اسم المستخدم أو كلمة المرور غير صحيحة!');
+            }
+        }
+
+        function logout() { location.reload(); }
+
+        function updateSafeSelector() {
+            const select = document.getElementById('safeFilterSelect');
+            select.innerHTML = '<option value="ALL">كل الخزائن (شامل)</option>';
+            users.forEach(u => {
+                select.innerHTML += `<option value="${u.username}">خزينة ${u.username}</option>`;
+            });
+        }
+
+        function loadCategories() {
+            const list = document.getElementById('categoriesList');
+            const catTargets = document.querySelectorAll('.cat-select-target');
+            const filterSelect = document.getElementById('filterCategory');
+            
+            list.innerHTML = '';
+            catTargets.forEach(el => el.innerHTML = '');
+            filterSelect.innerHTML = '<option value="">كل البنود</option>';
+
+            categories.forEach(c => {
+                list.innerHTML += `<li class="list-group-item d-flex justify-content-between">${c}</li>`;
+                catTargets.forEach(el => el.innerHTML += `<option value="${c}">${c}</option>`);
+                filterSelect.innerHTML += `<option value="${c}">${c}</option>`;
+            });
+        }
+
+        function addCategory() {
+            const name = document.getElementById('newCatName').value;
+            if (name) {
+                categories.push(name);
+                document.getElementById('newCatName').value = '';
+                loadCategories();
+            }
+        }
+
+        function addUser() {
+            const u = document.getElementById('newUsername').value;
+            const p = document.getElementById('newUserPass').value;
+            const r = document.getElementById('newUserRole').value;
+            if(u && p) {
+                users.push({ username: u, pass: p, role: r });
+                alert('تمت إضافة المستخدم بنجاح');
+                updateSafeSelector();
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newUserPass').value = '';
+            }
+        }
+
+        // حفظ الحركة المباشرة من الشاشة الرئيسية
+        async function saveDirectTransaction(type) {
+            const prefix = type === 'in' ? 'in' : 'out';
+            const amount = parseFloat(document.getElementById(prefix + 'Amount').value);
+            const category = document.getElementById(prefix + 'Category').value;
+            const method = document.getElementById(prefix + 'Method').value;
+            const notes = document.getElementById(prefix + 'Notes').value;
+
+            if(!amount || amount <= 0) return alert('برجاء كتابة مبلغ صحيح');
+
+            const newTx = {
+                created_at: new Date().toISOString().split('T')[0],
+                type, amount, category, payment_method: method, description: notes,
+                created_by: currentUser.username
+            };
+
+            await db.from('transactions').insert([newTx]);
+            
+            // تفريغ الحقول
+            document.getElementById(prefix + 'Amount').value = '';
+            document.getElementById(prefix + 'Notes').value = '';
+            
+            loadTransactions();
+        }
+
+        async function loadTransactions() {
+            let { data } = await db.from('transactions').select('*');
+            rawTransactions = data || [];
+            applyFilters();
+        }
+
+        function resetFilters() {
+            document.getElementById('filterFromDate').value = '';
+            document.getElementById('filterToDate').value = '';
+            document.getElementById('filterCategory').value = '';
+            document.getElementById('filterMethod').value = '';
+            applyFilters();
+        }
+
+        function applyFilters() {
+            let filtered = [...rawTransactions];
+
+            if (currentUser.role !== 'admin') {
+                filtered = filtered.filter(x => x.created_by === currentUser.username);
+            } else {
+                const selectedSafe = document.getElementById('safeFilterSelect').value;
+                if (selectedSafe !== 'ALL') filtered = filtered.filter(x => x.created_by === selectedSafe);
+            }
+
+            const from = document.getElementById('filterFromDate').value;
+            const to = document.getElementById('filterToDate').value;
+            if (from) filtered = filtered.filter(x => x.created_at >= from);
+            if (to) filtered = filtered.filter(x => x.created_at <= to);
+
+            const cat = document.getElementById('filterCategory').value;
+            if (cat) filtered = filtered.filter(x => x.category === cat);
+
+            const method = document.getElementById('filterMethod').value;
+            if (method) filtered = filtered.filter(x => x.payment_method === method);
+
+            render(filtered);
+        }
+
+        function render(data) {
+            const tbody = document.getElementById('ledgerTableBody');
+            tbody.innerHTML = '';
+
+            let totalIn = 0, totalOut = 0, vCash = 0, insta = 0;
+
+            data.forEach(t => {
+                const isVodafone = t.payment_method === 'vodafone';
+                const isInsta = t.payment_method === 'instapay';
+                
+                let colorClass = isVodafone ? 'pay-vodafone' : (isInsta ? 'pay-instapay' : 'pay-cash');
+                let methodTitle = isVodafone ? 'فودافون كاش' : (isInsta ? 'إنستا باي' : 'كاش');
+
+                if (t.type === 'in') {
+                    totalIn += Number(t.amount);
+                    if (isVodafone) vCash += Number(t.amount);
+                    if (isInsta) insta += Number(t.amount);
+                } else {
+                    totalOut += Number(t.amount);
+                    if (isVodafone) vCash -= Number(t.amount);
+                    if (isInsta) insta -= Number(t.amount);
+                }
+
+                tbody.innerHTML += `<tr>
+                    <td class="${t.type === 'in' ? 'text-success fw-bold' : ''}">${t.type === 'in' ? t.amount : '-'}</td>
+                    <td>${t.type === 'in' ? t.category : '-'}</td>
+                    <td class="${t.type === 'in' ? colorClass : ''}">${t.type === 'in' ? methodTitle : '-'}</td>
+                    <td>${t.type === 'in' ? (t.description || '') : '-'}</td>
+
+                    <td class="${t.type === 'out' ? 'text-danger fw-bold' : ''}">${t.type === 'out' ? t.amount : '-'}</td>
+                    <td>${t.type === 'out' ? t.category : '-'}</td>
+                    <td class="${t.type === 'out' ? colorClass : ''}">${t.type === 'out' ? methodTitle : '-'}</td>
+                    <td>${t.type === 'out' ? (t.description || '') : '-'}</td>
+                </tr>`;
+            });
+
+            let balance = totalIn - totalOut;
+            let cashOnly = balance - vCash - insta;
+
+            document.getElementById('statIn').innerText = totalIn.toLocaleString();
+            document.getElementById('statOut').innerText = totalOut.toLocaleString();
+            document.getElementById('statBalance').innerText = balance.toLocaleString();
+            document.getElementById('statVodafone').innerText = vCash.toLocaleString();
+            document.getElementById('statInsta').innerText = insta.toLocaleString();
+            document.getElementById('statCash').innerText = cashOnly.toLocaleString();
+        }
+    </script>
+</body>
+</html>
