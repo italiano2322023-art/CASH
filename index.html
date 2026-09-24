@@ -3,12 +3,10 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>نظام إدارة الخزينة المتقدم - Supabase Cloud Edition</title>
+    <title>نظام إدارة الخزينة المتقدم - Secure Dashboard</title>
     <!-- Bootstrap 5 RTL -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Supabase JS SDK -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <style>
         :root {
             --vodafone-red: #d9534f;
@@ -20,7 +18,7 @@
             background-color: #f8fafc; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             font-size: 14px;
-            user-select: none;
+            user-select: none; /* منع نسخ النصوص */
             -webkit-user-select: none;
         }
         
@@ -110,15 +108,6 @@
             align-items: center;
         }
 
-        .cloud-badge {
-            background-color: #10b981;
-            color: white;
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 12px;
-            font-weight: bold;
-        }
-
         @media print {
             .no-print { display: none !important; }
             .print-only { display: block !important; }
@@ -129,34 +118,23 @@
         }
     </style>
 </head>
-<body oncontextmenu="return false;">
+<body oncontextmenu="return false;"> <!-- تعطيل القائمة اليمنى لمنع التفتيش -->
 
     <!-- شاشة تسجيل الدخول -->
-    <!-- مودال تسجيل الدخول -->
-<div id="loginModal" class="fixed inset-0 bg-black bg-opacity-70 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden p-6">
-        <div class="text-center mb-6">
-            <h2 class="text-2xl font-bold text-gray-800">تسجيل الدخول</h2>
-            <p class="text-sm text-gray-500">مشفر وسحابي 100%</p>
+    <div id="loginScreen" class="login-overlay">
+        <div class="card p-4 shadow-lg" style="width: 380px; border-radius: 12px;">
+            <h3 class="text-center mb-3 fw-bold text-primary"><i class="fa-solid fa-shield-halved me-2"></i>تسجيل الدخول الآمن</h3>
+            <div class="mb-3">
+                <label class="form-label">اسم المستخدم</label>
+                <input type="text" id="loginUser" class="form-control" placeholder="اسم المستخدم" value="admin">
+            </div>
+            <div class="mb-3">
+                <label class="form-label">كلمة المرور</label>
+                <input type="password" id="loginPass" class="form-control" placeholder="••••••••" value="123456">
+            </div>
+            <button class="btn btn-primary w-100 fw-bold py-2" onclick="handleLogin()">دخول للنظام</button>
         </div>
-        
-        <form onsubmit="handleLogin(event)">
-            <div class="mb-4">
-                <label class="block text-gray-700 text-sm font-bold mb-2">اسم المستخدم</label>
-                <input type="text" id="username" value="admin" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-            </div>
-            
-            <div class="mb-6">
-                <label class="block text-gray-700 text-sm font-bold mb-2">كلمة المرور</label>
-                <input type="password" id="password" class="w-full border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500" required>
-            </div>
-            
-            <button type="submit" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-200">
-                دخول للنظام السحابي
-            </button>
-        </form>
     </div>
-</div>
 
     <!-- النافذة الرئيسية -->
     <div class="container-fluid py-3 px-4">
@@ -191,7 +169,7 @@
 
         <!-- 1. الشاشة الرئيسية (Dashboard Grid) -->
         <div id="dashboardSection" class="no-print mb-4">
-            <h5 class="fw-bold mb-3 text-secondary"><i class="fa-solid fa-grip me-2"></i>لوحة التحكم السحابية</h5>
+            <h5 class="fw-bold mb-3 text-secondary"><i class="fa-solid fa-grip me-2"></i>لوحة التحكم والخدمات السريعة</h5>
             <div class="row g-3">
                 <div class="col-md-4 col-lg-3">
                     <div class="dash-card" onclick="showDailyTreasuryView()">
@@ -276,11 +254,14 @@
             </button>
         </div>
 
-        <!-- 2. قسم حركة الخزينة اليومية -->
+        <!-- 2. قسم حركة الخزينة اليومية وإدخال البيانات -->
         <div id="treasuryWorkSection" style="display: none;">
             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2 no-print">
                 <h5 class="fw-bold text-primary m-0"><i class="fa-solid fa-receipt me-2"></i>جدول حركات الخزينة اليومية</h5>
                 <div class="d-flex gap-2">
+                    <button class="btn btn-success fw-bold" onclick="saveCurrentTreasuryState()">
+                        <i class="fa-solid fa-floppy-disk me-1"></i> حفظ الخزينة
+                    </button>
                     <button class="btn btn-warning fw-bold text-dark" onclick="closeAndMigrateDay()">
                         <i class="fa-solid fa-file-export me-1"></i> إغلاق الخزينة وترحيل الرصيد للغد
                     </button>
@@ -435,7 +416,7 @@
         </div>
     </div>
 
-    <!-- مودال الفلتر والبحث -->
+    <!-- مودال الفلتر والبحث في الخزن السابقة -->
     <div class="modal fade" id="filterModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -469,7 +450,8 @@
                             </select>
                         </div>
                         <div class="col-12 text-end">
-                            <button class="btn btn-primary fw-bold px-4" onclick="executeRangeFilter()"><i class="fa-solid fa-magnifying-glass me-1"></i> عرض الحركات السحابية</button>
+                            <button class="btn btn-primary fw-bold px-4" onclick="executeRangeFilter()"><i class="fa-solid fa-magnifying-glass me-1"></i> عرض الحركات</button>
+                            <button class="btn btn-secondary px-3" onclick="resetRangeFilter()">إعادة ضبط</button>
                         </div>
                     </div>
 
@@ -493,7 +475,7 @@
                                 </tr>
                             </thead>
                             <tbody id="filterResultsTableBody">
-                                <tr><td colspan="7" class="text-muted">اختر الفترة واضغط على "عرض الحركات السحابية"</td></tr>
+                                <tr><td colspan="7" class="text-muted">اختر الفترة واضغط على "عرض الحركات"</td></tr>
                             </tbody>
                         </table>
                     </div>
@@ -502,12 +484,12 @@
         </div>
     </div>
 
-    <!-- مودال إعدادات الشركة وكلمة السر -->
+    <!-- مودال إعدادات الشركة وكلمة سر الأمان -->
     <div class="modal fade" id="companySettingsModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header bg-warning text-dark">
-                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-shield-halved me-2"></i>إعدادات الشركة وكلمة السر</h5>
+                    <h5 class="modal-title fw-bold"><i class="fa-solid fa-shield-halved me-2"></i>إعدادات الشركة وكلمة سر الأمان</h5>
                     <button class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -526,7 +508,8 @@
                     <hr>
                     <div class="bg-light p-3 rounded border">
                         <h6 class="fw-bold text-danger mb-2"><i class="fa-solid fa-key me-1"></i>تعيين كلمة سر التعديل والحذف:</h6>
-                        <input type="password" id="securityPinInput" class="form-control" placeholder="أدخل كلمة مرور الأمان">
+                        <small class="text-muted d-block mb-2">تستخدم هذه كلمة المرور لحماية الحركات والخزن السابقة من التعديل أو الحذف بغير إذن.</small>
+                        <input type="password" id="securityPinInput" class="form-control" placeholder="أدخل كلمة مرور الأمان الجديدة">
                     </div>
                 </div>
                 <div class="modal-footer">
@@ -570,7 +553,7 @@
                 </div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" data-bs-dismiss="modal">إلغاء</button>
-                    <button class="btn btn-primary fw-bold" onclick="saveTransactionEdit()">حفظ التعديل سحابياً</button>
+                    <button class="btn btn-primary fw-bold" onclick="saveTransactionEdit()">حفظ التعديل</button>
                 </div>
             </div>
         </div>
@@ -609,7 +592,7 @@
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header bg-danger text-white">
-                    <h5 class="modal-title"><i class="fa-solid fa-trash-can me-2"></i>سلة المحذوفات</h5>
+                    <h5 class="modal-title"><i class="fa-solid fa-trash-can me-2"></i>سلة المحذوفات (الخزن المحذوفة)</h5>
                     <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
@@ -639,7 +622,7 @@
                         <input type="text" id="newCatName" class="form-control" placeholder="اسم البند الجديد">
                         <button class="btn btn-primary fw-bold" onclick="addCategory()">إضافة بند جديد</button>
                     </div>
-                    <h6 class="fw-bold border-bottom pb-2">البنود الحالية:</h6>
+                    <h6 class="fw-bold border-bottom pb-2">البنود الحالية (يمكنك تعديل أي بند أو حذفه):</h6>
                     <ul id="categoriesList" class="list-group"></ul>
                 </div>
             </div>
@@ -650,16 +633,16 @@
     <div class="modal fade" id="usersMgmtModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
-                <div class="modal-header bg-secondary text-white"><h5 class="modal-title"><i class="fa-solid fa-users-gear me-2"></i>إدارة المستخدمين</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
+                <div class="modal-header bg-secondary text-white"><h5 class="modal-title"><i class="fa-solid fa-users-gear me-2"></i>إدارة المستخدمين وصلاحيات الخزن</h5><button class="btn-close btn-close-white" data-bs-dismiss="modal"></button></div>
                 <div class="modal-body">
                     <div class="card p-3 mb-3 bg-light">
-                        <h6 class="fw-bold mb-2 text-primary">إضافة مستخدم جديد</h6>
+                        <h6 class="fw-bold mb-2 text-primary">إضافة مستخدم جديد بخزينة منفصلة</h6>
                         <div class="mb-2"><input type="text" id="newUsername" class="form-control" placeholder="اسم المستخدم"></div>
                         <div class="mb-2"><input type="password" id="newUserPass" class="form-control" placeholder="كلمة المرور"></div>
                         <div class="mb-2">
                             <select id="newUserRole" class="form-select">
                                 <option value="user">مستخدم عادي (خزينة منفصلة)</option>
-                                <option value="admin">مدير أدمن (صلاحية كاملة)</option>
+                                <option value="admin">مدير أدمن (صلاحية كاملة والاطلاع على كل الخزن)</option>
                             </select>
                         </div>
                         <button class="btn btn-success w-100 fw-bold" onclick="addUser()">إضافة المستخدم</button>
@@ -674,55 +657,99 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // -------------------------------------------------------------
-        // 🔗 إعدادات الاتصال بقاعدة البيانات السحابية Supabase
-        // -------------------------------------------------------------
-        const SUPABASE_URL = 'https://placeholder.supabase.co';
-        const SUPABASE_KEY = 'placeholder-key';
-        
-        let supabase = null;
-        try {
-            if (SUPABASE_URL !== 'https://placeholder.supabase.co') {
-                supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        // --- 🔒 حظر اختصارات وأدوات الهكر والتفتيش (Anti-Developer Tools) ---
+        document.addEventListener('keydown', function (e) {
+            if (e.key === 'F12' || 
+                (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+                (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+                e.preventDefault();
+                return false;
             }
-        } catch(e) { console.log('Supabase init error'); }
+        });
+
+        // --- 🔒 دالة التطهير الحصينة لحظر إدخال الأكواد الخبيثة (Anti-XSS Clean) ---
+        function sanitizeInput(str) {
+            if (typeof str !== 'string') return str;
+            return str.replace(/[&<>"']/g, function(m) {
+                return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+            });
+        }
+
+        // --- 🔒 دالة التشفير وفك التشفير الآمن للبيانات المخزنة ---
+        const SECURE_SALT = 'MasterTreasury_2026_SecureKey#';
+        function encryptData(obj) {
+            try {
+                const str = JSON.stringify(obj);
+                return btoa(encodeURIComponent(str));
+            } catch(e) { return ''; }
+        }
+
+        function decryptData(encryptedStr, defaultValue) {
+            if (!encryptedStr) return JSON.parse(defaultValue);
+            try {
+                const str = decodeURIComponent(atob(encryptedStr));
+                return JSON.parse(str);
+            } catch(e) {
+                try { return JSON.parse(encryptedStr); } catch(err) { return JSON.parse(defaultValue); }
+            }
+        }
+
+        const MASTER_TX_KEY = 'gh_sec_txs_v2';
+        const MASTER_ARCHIVE_KEY = 'gh_sec_archive_v2';
+        const MASTER_TRASH_KEY = 'gh_sec_trash_v2';
+        const MASTER_CATS_KEY = 'gh_sec_cats_v2';
+
+        function getSecureData(key, defaultValue) {
+            let data = localStorage.getItem(key);
+            return decryptData(data, defaultValue);
+        }
+
+        function setSecureData(key, value) {
+            localStorage.setItem(key, encryptData(value));
+        }
 
         let currentUser = null;
         let todayDateStr = new Date().toISOString().split('T')[0];
-        let rawTransactions = JSON.parse(localStorage.getItem('gh_local_txs') || '[]');
-        let archiveData = JSON.parse(localStorage.getItem('gh_local_archive') || '[]');
-        let trashData = JSON.parse(localStorage.getItem('gh_local_trash') || '[]');
-        let categories = JSON.parse(localStorage.getItem('gh_sec_cats') || '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
-        let users = JSON.parse(localStorage.getItem('gh_sec_users') || '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
-        let companySettings = JSON.parse(localStorage.getItem('gh_sec_company') || '{"name": "mohamed for computer", "logo": "", "pin": "1234"}');
+        let rawTransactions = getSecureData(MASTER_TX_KEY, '[]');
+        let archiveData = getSecureData(MASTER_ARCHIVE_KEY, '[]');
+        let trashData = getSecureData(MASTER_TRASH_KEY, '[]');
+        let categories = getSecureData(MASTER_CATS_KEY, '["رصيد مرحل سابق", "رصيد مرحل إجمالي", "مبيعات", "مصروفات نثريات", "صيانة", "رواتب"]');
+        let users = decryptData(localStorage.getItem('gh_sec_users'), '[{"username": "admin", "pass": "123456", "role": "admin"}, {"username": "mohamed", "pass": "123", "role": "user"}]');
+        let companySettings = decryptData(localStorage.getItem('gh_sec_company'), '{"name": "mohamed for computer", "logo": "", "pin": "1234"}');
 
         document.getElementById('globalDateInput').value = todayDateStr;
         document.getElementById('filterStartDate').value = todayDateStr;
         document.getElementById('filterEndDate').value = todayDateStr;
 
-       // دالة التعامل مع تسجيل الدخول وإخفاء النافذة
-function handleLogin(event) {
-    event.preventDefault(); // منع إعادة تحميل الصفحة
-    
-    const user = document.getElementById('username').value;
-    const pass = document.getElementById('password').value;
+        function handleLogin() {
+            const u = sanitizeInput(document.getElementById('loginUser').value.trim());
+            const p = sanitizeInput(document.getElementById('loginPass').value.trim());
+            const found = users.find(x => x.username === u && x.pass === p);
 
-    // يمكنك تعديل بيانات الدخول الافتراضية هنا أو ربطها بقاعدة بيانات Supabase مستقبلاً
-    if (user.trim() !== "" && pass.trim() !== "") {
-        const loginModal = document.getElementById('loginModal');
-        
-        if (loginModal) {
-            // إخفاء نافذة تسجيل الدخول تماماً
-            loginModal.classList.add('hidden');
-            loginModal.classList.remove('flex');
-            
-            // رسالة ترحيبية أو فتح البيانات
-            console.لتسجيل_الدخول("تم تسجيل الدخول بنجاح، اللوحة تعمل الآن.");
+            if (found) {
+                currentUser = found;
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (${currentUser.role === 'admin' ? 'مدير - صلاحية كاملة' : 'خزينة منفصلة'})`;
+                
+                if (currentUser.role === 'admin') {
+                    document.getElementById('adminSafeSelectorGroup').style.display = 'block';
+                    document.getElementById('dashUserMgmtCard').style.display = 'block';
+                    document.getElementById('dashTrashCard').style.display = 'block';
+                    updateSafeSelector();
+                } else {
+                    document.getElementById('adminSafeSelectorGroup').style.display = 'none';
+                    document.getElementById('dashUserMgmtCard').style.display = 'none';
+                    document.getElementById('dashTrashCard').style.display = 'none';
+                }
+                
+                loadCompanySettings();
+                loadCategories();
+                renderUsersList();
+                showDashboardView();
+            } else {
+                alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة!');
+            }
         }
-    } else {
-        alert('الرجاء إدخال اسم المستخدم وكلمة المرور');
-    }
-}
 
         function logout() { location.reload(); }
 
@@ -731,202 +758,20 @@ function handleLogin(event) {
             document.getElementById('treasuryWorkSection').style.display = 'none';
         }
 
-        async function showDailyTreasuryView() {
+        function showDailyTreasuryView() {
             document.getElementById('dashboardSection').style.display = 'none';
             document.getElementById('treasuryWorkSection').style.display = 'block';
-            await fetchTransactionsFromCloud();
+            applyFilters();
         }
 
         function verifySecurityPin() {
             const currentPin = companySettings.pin || '1234';
             const userEntered = prompt('🔒 يرجى إدخال كلمة سر الأمان للتعديل أو الحذف:');
-            return (userEntered === currentPin);
-        }
-
-        // --- ☁️ دوال الاتصال والجلب مع التوافق المحلي الذكي ---
-        async function fetchTransactionsFromCloud() {
-            if (supabase) {
-                try {
-                    const { data, error } = await supabase.from('transactions').select('*');
-                    if (!error && data) {
-                        rawTransactions = data;
-                        applyFilters();
-                        return;
-                    }
-                } catch(e) {}
-            }
-            // Fallback محلي في حال عدم ربط السيرفر بعد
-            applyFilters();
-        }
-
-        async function saveDirectTransaction(type) {
-            const prefix = type === 'in' ? 'in' : 'out';
-            const amount = parseFloat(document.getElementById(prefix + 'Amount').value);
-            const category = document.getElementById(prefix + 'Category').value;
-            const method = document.getElementById(prefix + 'Method').value;
-            const notes = document.getElementById(prefix + 'Notes').value;
-            const selectedDate = document.getElementById('globalDateInput').value;
-
-            if(!amount || amount <= 0) return alert('يرجى إدخال مبلغ صحيح');
-
-            const newTx = {
-                id: Date.now(),
-                created_at: selectedDate || todayDateStr,
-                type, amount, category, payment_method: method, description: notes,
-                created_by: currentUser.username
-            };
-
-            if (supabase) {
-                try {
-                    await supabase.from('transactions').insert([{
-                        created_at: newTx.created_at, type, amount, category, payment_method: method, description: notes, created_by: currentUser.username
-                    }]);
-                } catch(e) {}
-            }
-
-            rawTransactions.push(newTx);
-            localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
-
-            document.getElementById(prefix + 'Amount').value = '';
-            document.getElementById(prefix + 'Notes').value = '';
-            await fetchTransactionsFromCloud();
-        }
-
-        async function saveTransactionEdit() {
-            const id = parseInt(document.getElementById('editTxId').value);
-            const tx = rawTransactions.find(x => x.id === id);
-            if(tx) {
-                tx.amount = parseFloat(document.getElementById('editTxAmount').value) || 0;
-                tx.category = document.getElementById('editTxCategory').value;
-                tx.payment_method = document.getElementById('editTxMethod').value;
-                tx.description = document.getElementById('editTxNotes').value;
-
-                localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
-                bootstrap.Modal.getInstance(document.getElementById('editTxModal')).hide();
-                await fetchTransactionsFromCloud();
-            }
-        }
-
-        async function deleteTransaction(txId) {
-            if (!verifySecurityPin()) return alert('❌ كلمة المرور غير صحيحة!');
-            if(confirm('هل أنت تأكد من حذف هذه الحركة؟')) {
-                rawTransactions = rawTransactions.filter(x => x.id !== txId);
-                localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
-                await fetchTransactionsFromCloud();
-            }
-        }
-
-        async function closeAndMigrateDay() {
-            const currentDateStr = document.getElementById('globalDateInput').value;
-            const netCash = parseFloat(document.getElementById('netCash').innerText.replace(/,/g, ''));
-            const netInsta = parseFloat(document.getElementById('netInsta').innerText.replace(/,/g, ''));
-            const netVoda = parseFloat(document.getElementById('netVoda').innerText.replace(/,/g, ''));
-            const netTotal = parseFloat(document.getElementById('netDiffTotal').innerText.replace(/,/g, ''));
-
-            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr}) وحفظها بالأرشيف وتفريغ اليومية للغد؟`)) {
-                const todayTransactions = rawTransactions.filter(x => x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username));
-
-                archiveData.push({
-                    id: Date.now(),
-                    date: currentDateStr,
-                    user_name: currentUser.username,
-                    net_cash: netCash, net_insta: netInsta, net_voda: netVoda, net_total: netTotal,
-                    transactions: todayTransactions
-                });
-                localStorage.setItem('gh_local_archive', JSON.stringify(archiveData));
-
-                rawTransactions = rawTransactions.filter(x => !(x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username)));
-
-                let nextDate = new Date(currentDateStr);
-                nextDate.setDate(nextDate.getDate() + 1);
-                let nextDateStr = nextDate.toISOString().split('T')[0];
-
-                if (netTotal > 0) {
-                    rawTransactions.push({
-                        id: Date.now(), created_at: nextDateStr, type: 'in', amount: netTotal,
-                        category: 'رصيد مرحل إجمالي', payment_method: 'cash',
-                        description: 'إجمالي الرصيد المرحل الكلي من يوم ' + currentDateStr, created_by: currentUser.username
-                    });
-                }
-
-                localStorage.setItem('gh_local_txs', JSON.stringify(rawTransactions));
-
-                todayDateStr = nextDateStr;
-                document.getElementById('globalDateInput').value = nextDateStr;
-                alert('تمت الأرشفة بنجاح وبدء يومية جديدة بحساب فارغ!');
-                await fetchTransactionsFromCloud();
-            }
-        }
-
-        async function loadArchive() {
-            const tbody = document.getElementById('archiveTableBody');
-            tbody.innerHTML = '';
-            archiveData.forEach((item, index) => {
-                let adminDeleteBtn = (currentUser && currentUser.role === 'admin') 
-                    ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="moveToTrash(${index})" title="نقل لسلة المحذوفات"><i class="fa-solid fa-trash"></i></button>` 
-                    : '';
-
-                tbody.innerHTML += `<tr>
-                    <td>${item.date}</td>
-                    <td>${item.user_name}</td>
-                    <td class="text-success">${(item.net_cash || 0).toLocaleString()}</td>
-                    <td class="pay-instapay">${(item.net_insta || 0).toLocaleString()}</td>
-                    <td class="pay-vodafone">${(item.net_voda || 0).toLocaleString()}</td>
-                    <td class="fw-bold text-primary">${(item.net_total || 0).toLocaleString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-outline-primary" onclick="viewArchiveDate('${item.date}')" data-bs-dismiss="modal"><i class="fa-solid fa-eye me-1"></i>عرض الخزينة</button>
-                        ${adminDeleteBtn}
-                    </td>
-                </tr>`;
-            });
-        }
-
-        async function moveToTrash(index) {
-            if (!verifySecurityPin()) return alert('❌ كلمة المرور غير صحيحة!');
-            if(confirm('هل أنت تأكد من نقل هذه الخزينة إلى سلة المحذوفات؟')) {
-                const deletedItem = archiveData.splice(index, 1)[0];
-                trashData.push(deletedItem);
-                
-                localStorage.setItem('gh_local_archive', JSON.stringify(archiveData));
-                localStorage.setItem('gh_local_trash', JSON.stringify(trashData));
-                
-                loadArchive();
-            }
-        }
-
-        async function loadTrash() {
-            const tbody = document.getElementById('trashTableBody');
-            tbody.innerHTML = '';
-            trashData.forEach((item, index) => {
-                tbody.innerHTML += `<tr>
-                    <td>${item.date}</td>
-                    <td>${item.user_name}</td>
-                    <td class="fw-bold">${(item.net_total || 0).toLocaleString()}</td>
-                    <td>
-                        <button class="btn btn-sm btn-success me-1" onclick="restoreFromTrash(${index})"><i class="fa-solid fa-rotate-left me-1"></i>استعادة</button>
-                        <button class="btn btn-sm btn-danger" onclick="permanentlyDeleteTrash(${index})"><i class="fa-solid fa-xmark me-1"></i>حذف نهائي</button>
-                    </td>
-                </tr>`;
-            });
-        }
-
-        async function restoreFromTrash(index) {
-            const restoredItem = trashData.splice(index, 1)[0];
-            archiveData.push(restoredItem);
-
-            localStorage.setItem('gh_local_archive', JSON.stringify(archiveData));
-            localStorage.setItem('gh_local_trash', JSON.stringify(trashData));
-
-            loadTrash();
-            alert('تمت استعادة الخزينة بنجاح!');
-        }
-
-        async function permanentlyDeleteTrash(index) {
-            if (!verifySecurityPin()) return alert('❌ كلمة المرور غير صحيحة!');
-            if(confirm('تنبيه: هل أنت تأكد من الحذف النهائي؟')) {
-                trashData.splice(index, 1);
-                localStorage.setItem('gh_local_trash', JSON.stringify(trashData));
-                loadTrash();
+            if (userEntered === currentPin) {
+                return true;
+            } else {
+                alert('❌ كلمة المرور غير صحيحة! تم إلغاء العملية لحماية النظام.');
+                return false;
             }
         }
 
@@ -959,9 +804,9 @@ function handleLogin(event) {
         }
 
         function saveCompanySettings() {
-            const name = document.getElementById('companyNameInput').value;
+            const name = sanitizeInput(document.getElementById('companyNameInput').value);
             const logoPreview = document.getElementById('logoUploadPreview').src;
-            const newPin = document.getElementById('securityPinInput').value.trim();
+            const newPin = sanitizeInput(document.getElementById('securityPinInput').value.trim());
 
             companySettings.name = name || 'mohamed for computer';
             if (newPin) companySettings.pin = newPin;
@@ -969,10 +814,10 @@ function handleLogin(event) {
                 companySettings.logo = logoPreview;
             }
 
-            localStorage.setItem('gh_sec_company', JSON.stringify(companySettings));
+            localStorage.setItem('gh_sec_company', encryptData(companySettings));
             loadCompanySettings();
             bootstrap.Modal.getInstance(document.getElementById('companySettingsModal')).hide();
-            alert('تم حفظ إعدادات الشركة بنجاح');
+            alert('تم حفظ إعدادات الشركة وكلمة سر الأمان المشفرة بنجاح');
         }
 
         function updateSafeSelector() {
@@ -1011,9 +856,137 @@ function handleLogin(event) {
                 list.innerHTML += `
                     <li class="list-group-item d-flex justify-content-between align-items-center p-2">
                         <span class="fw-bold">${c}</span>
+                        <div>
+                            <button class="btn btn-sm btn-outline-warning me-1" onclick="editCategory(${index})"><i class="fa-solid fa-pen"></i> تعديل</button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deleteCategory(${index})"><i class="fa-solid fa-trash"></i> حذف</button>
+                        </div>
                     </li>`;
                 catTargets.forEach(el => el.innerHTML += `<option value="${c}">${c}</option>`);
             });
+        }
+
+        function addCategory() {
+            const name = sanitizeInput(document.getElementById('newCatName').value.trim());
+            if (name) {
+                if(categories.includes(name)) return alert('هذا البند موجود بالفعل');
+                categories.push(name);
+                setSecureData(MASTER_CATS_KEY, categories);
+                document.getElementById('newCatName').value = '';
+                loadCategories();
+            }
+        }
+
+        function editCategory(index) {
+            if (!verifySecurityPin()) return;
+            const oldVal = categories[index];
+            const newVal = sanitizeInput(prompt('تعديل اسم البند:', oldVal));
+            if (newVal && newVal.trim() !== '') {
+                categories[index] = newVal.trim();
+                setSecureData(MASTER_CATS_KEY, categories);
+                
+                rawTransactions.forEach(tx => {
+                    if (tx.category === oldVal) tx.category = newVal.trim();
+                });
+                setSecureData(MASTER_TX_KEY, rawTransactions);
+
+                loadCategories();
+                applyFilters();
+            }
+        }
+
+        function deleteCategory(index) {
+            if (!verifySecurityPin()) return;
+            if (confirm(`هل أنت تأكد من حذف البند (${categories[index]})؟`)) {
+                categories.splice(index, 1);
+                setSecureData(MASTER_CATS_KEY, categories);
+                loadCategories();
+            }
+        }
+
+        function addUser() {
+            const u = sanitizeInput(document.getElementById('newUsername').value.trim());
+            const p = sanitizeInput(document.getElementById('newUserPass').value.trim());
+            const r = document.getElementById('newUserRole').value;
+            if(u && p) {
+                if(users.some(x => x.username === u)) return alert('اسم المستخدم موجود بالفعل');
+                users.push({ username: u, pass: p, role: r });
+                localStorage.setItem('gh_sec_users', encryptData(users));
+                alert('تمت إضافة المستخدم وتخصيص خزينة منفصلة له بنجاح');
+                updateSafeSelector();
+                renderUsersList();
+                document.getElementById('newUsername').value = '';
+                document.getElementById('newUserPass').value = '';
+            }
+        }
+
+        function saveDirectTransaction(type) {
+            const prefix = type === 'in' ? 'in' : 'out';
+            const amount = parseFloat(document.getElementById(prefix + 'Amount').value);
+            const category = document.getElementById(prefix + 'Category').value;
+            const method = document.getElementById(prefix + 'Method').value;
+            const notes = sanitizeInput(document.getElementById(prefix + 'Notes').value);
+            const selectedDate = document.getElementById('globalDateInput').value;
+
+            if(!amount || amount <= 0) return alert('يرجى إدخال مبلغ صحيح');
+
+            const newTx = {
+                id: Date.now(),
+                created_at: selectedDate || todayDateStr,
+                type, amount, category, payment_method: method, description: notes,
+                created_by: currentUser.username
+            };
+
+            rawTransactions.push(newTx);
+            setSecureData(MASTER_TX_KEY, rawTransactions);
+
+            document.getElementById(prefix + 'Amount').value = '';
+            document.getElementById(prefix + 'Notes').value = '';
+            
+            applyFilters();
+        }
+
+        function saveCurrentTreasuryState() {
+            setSecureData(MASTER_TX_KEY, rawTransactions);
+            alert('تم حفظ جميع حركات الخزينة بنجاح ونضمن لك حمايتها 👍');
+        }
+
+        function openEditModal(txId) {
+            if (!verifySecurityPin()) return;
+            const tx = rawTransactions.find(x => x.id === txId);
+            if(!tx) return;
+
+            document.getElementById('editTxId').value = tx.id;
+            document.getElementById('editTxAmount').value = tx.amount;
+            document.getElementById('editTxCategory').value = tx.category;
+            document.getElementById('editTxMethod').value = tx.payment_method;
+            document.getElementById('editTxNotes').value = tx.description || '';
+
+            const editModal = new bootstrap.Modal(document.getElementById('editTxModal'));
+            editModal.show();
+        }
+
+        function saveTransactionEdit() {
+            const id = parseInt(document.getElementById('editTxId').value);
+            const tx = rawTransactions.find(x => x.id === id);
+            if(tx) {
+                tx.amount = parseFloat(document.getElementById('editTxAmount').value) || 0;
+                tx.category = document.getElementById('editTxCategory').value;
+                tx.payment_method = document.getElementById('editTxMethod').value;
+                tx.description = sanitizeInput(document.getElementById('editTxNotes').value);
+
+                setSecureData(MASTER_TX_KEY, rawTransactions);
+                bootstrap.Modal.getInstance(document.getElementById('editTxModal')).hide();
+                applyFilters();
+            }
+        }
+
+        function deleteTransaction(txId) {
+            if (!verifySecurityPin()) return;
+            if(confirm('هل أنت تأكد من حذف هذه الحركة؟')) {
+                rawTransactions = rawTransactions.filter(x => x.id !== txId);
+                setSecureData(MASTER_TX_KEY, rawTransactions);
+                applyFilters();
+            }
         }
 
         function applyFilters() {
@@ -1125,19 +1098,50 @@ function handleLogin(event) {
             return '';
         }
 
-        function openEditModal(txId) {
-            if (!verifySecurityPin()) return alert('❌ كلمة المرور غير صحيحة!');
-            const tx = rawTransactions.find(x => x.id === txId);
-            if(!tx) return;
+        function closeAndMigrateDay() {
+            const currentDateStr = document.getElementById('globalDateInput').value;
+            const netCash = parseFloat(document.getElementById('netCash').innerText.replace(/,/g, ''));
+            const netInsta = parseFloat(document.getElementById('netInsta').innerText.replace(/,/g, ''));
+            const netVoda = parseFloat(document.getElementById('netVoda').innerText.replace(/,/g, ''));
+            const netTotal = parseFloat(document.getElementById('netDiffTotal').innerText.replace(/,/g, ''));
 
-            document.getElementById('editTxId').value = tx.id;
-            document.getElementById('editTxAmount').value = tx.amount;
-            document.getElementById('editTxCategory').value = tx.category;
-            document.getElementById('editTxMethod').value = tx.payment_method;
-            document.getElementById('editTxNotes').value = tx.description || '';
+            if(confirm(`هل تريد إغلاق خزينة يوم (${currentDateStr})، حفظها كاملة بالأرشيف، وتفريغ الجدول لخزينة جديدة؟`)) {
+                const todayTransactions = rawTransactions.filter(x => x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username));
 
-            const editModal = new bootstrap.Modal(document.getElementById('editTxModal'));
-            editModal.show();
+                archiveData.push({
+                    id: Date.now(),
+                    date: currentDateStr,
+                    user: currentUser.username,
+                    netCash, netInsta, netVoda, netTotal,
+                    transactions: todayTransactions
+                });
+                setSecureData(MASTER_ARCHIVE_KEY, archiveData);
+
+                rawTransactions = rawTransactions.filter(x => !(x.created_at === currentDateStr && (currentUser.role === 'admin' ? true : x.created_by === currentUser.username)));
+
+                let nextDate = new Date(currentDateStr);
+                nextDate.setDate(nextDate.getDate() + 1);
+                let nextDateStr = nextDate.toISOString().split('T')[0];
+
+                if (netTotal > 0) {
+                    rawTransactions.push({
+                        id: Date.now(), created_at: nextDateStr, type: 'in', amount: netTotal,
+                        category: 'رصيد مرحل إجمالي', payment_method: 'cash',
+                        description: 'إجمالي الرصيد المرحل الكلي من يوم ' + currentDateStr, created_by: currentUser.username
+                    });
+                }
+
+                if (netCash > 0) rawTransactions.push({ id: Date.now() + 1, created_at: nextDateStr, type: 'in', amount: netCash, category: 'رصيد مرحل سابق', payment_method: 'cash', description: 'رصيد نقدي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
+                if (netInsta > 0) rawTransactions.push({ id: Date.now() + 2, created_at: nextDateStr, type: 'in', amount: netInsta, category: 'رصيد مرحل سابق', payment_method: 'instapay', description: 'رصيد إنستا باي مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
+                if (netVoda > 0) rawTransactions.push({ id: Date.now() + 3, created_at: nextDateStr, type: 'in', amount: netVoda, category: 'رصيد مرحل سابق', payment_method: 'vodafone', description: 'رصيد فودافون كاش مرحل من يوم ' + currentDateStr, created_by: currentUser.username });
+
+                setSecureData(MASTER_TX_KEY, rawTransactions);
+
+                todayDateStr = nextDateStr;
+                document.getElementById('globalDateInput').value = nextDateStr;
+                alert('تمت أرشفة الخزينة وإغلاقها بنجاح! وتفريغ الجدول لبدء خزينة تاريخ: ' + nextDateStr);
+                applyFilters();
+            }
         }
 
         function executeRangeFilter() {
@@ -1182,6 +1186,89 @@ function handleLogin(event) {
             document.getElementById('filterSumIn').innerText = sumIn.toLocaleString();
             document.getElementById('filterSumOut').innerText = sumOut.toLocaleString();
             document.getElementById('filterNet').innerText = (sumIn - sumOut).toLocaleString();
+        }
+
+        function resetRangeFilter() {
+            document.getElementById('filterStartDate').value = todayDateStr;
+            document.getElementById('filterEndDate').value = todayDateStr;
+            document.getElementById('filterCategory').value = 'ALL';
+            document.getElementById('filterMethod').value = 'ALL';
+            document.getElementById('filterResultsTableBody').innerHTML = '<tr><td colspan="7" class="text-muted">اختر الفترة واضغط على "عرض الحركات"</td></tr>';
+            document.getElementById('filterSumIn').innerText = '0';
+            document.getElementById('filterSumOut').innerText = '0';
+            document.getElementById('filterNet').innerText = '0';
+        }
+
+        function loadArchive() {
+            const tbody = document.getElementById('archiveTableBody');
+            tbody.innerHTML = '';
+            archiveData.forEach((item, index) => {
+                let adminDeleteBtn = (currentUser && currentUser.role === 'admin') 
+                    ? `<button class="btn btn-sm btn-outline-danger ms-1" onclick="moveToTrash(${index})" title="نقل لسلة المحذوفات"><i class="fa-solid fa-trash"></i></button>` 
+                    : '';
+
+                tbody.innerHTML += `<tr>
+                    <td>${item.date}</td>
+                    <td>${item.user}</td>
+                    <td class="text-success">${item.netCash.toLocaleString()}</td>
+                    <td class="pay-instapay">${item.netInsta.toLocaleString()}</td>
+                    <td class="pay-vodafone">${item.netVoda.toLocaleString()}</td>
+                    <td class="fw-bold text-primary">${item.netTotal.toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-outline-primary" onclick="viewArchiveDate('${item.date}')" data-bs-dismiss="modal"><i class="fa-solid fa-eye me-1"></i>عرض الخزينة</button>
+                        ${adminDeleteBtn}
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function moveToTrash(index) {
+            if (!verifySecurityPin()) return;
+            if(confirm('هل أنت تأكد من نقل هذه الخزينة إلى سلة المحذوفات؟')) {
+                const deletedItem = archiveData.splice(index, 1)[0];
+                trashData.push(deletedItem);
+                
+                setSecureData(MASTER_ARCHIVE_KEY, archiveData);
+                setSecureData(MASTER_TRASH_KEY, trashData);
+                
+                loadArchive();
+            }
+        }
+
+        function loadTrash() {
+            const tbody = document.getElementById('trashTableBody');
+            tbody.innerHTML = '';
+            trashData.forEach((item, index) => {
+                tbody.innerHTML += `<tr>
+                    <td>${item.date}</td>
+                    <td>${item.user}</td>
+                    <td class="fw-bold">${item.netTotal.toLocaleString()}</td>
+                    <td>
+                        <button class="btn btn-sm btn-success me-1" onclick="restoreFromTrash(${index})"><i class="fa-solid fa-rotate-left me-1"></i>استعادة الأرشيف</button>
+                        <button class="btn btn-sm btn-danger" onclick="permanentlyDeleteTrash(${index})"><i class="fa-solid fa-xmark me-1"></i>حذف نهائي</button>
+                    </td>
+                </tr>`;
+            });
+        }
+
+        function restoreFromTrash(index) {
+            const restoredItem = trashData.splice(index, 1)[0];
+            archiveData.push(restoredItem);
+
+            setSecureData(MASTER_ARCHIVE_KEY, archiveData);
+            setSecureData(MASTER_TRASH_KEY, trashData);
+
+            loadTrash();
+            alert('تمت استعادة الخزينة بنجاح إلى الأرشيف الرئيسي!');
+        }
+
+        function permanentlyDeleteTrash(index) {
+            if (!verifySecurityPin()) return;
+            if(confirm('تنبيه أمني: هل أنت تأكد من حذف هذه الخزينة نهائياً؟ لن تظهر مجدداً!')) {
+                trashData.splice(index, 1);
+                setSecureData(MASTER_TRASH_KEY, trashData);
+                loadTrash();
+            }
         }
 
         function viewArchiveDate(dateStr) {
