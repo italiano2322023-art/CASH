@@ -18,7 +18,7 @@
             background-color: #f8fafc; 
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
             font-size: 14px;
-            user-select: none; /* منع نسخ النصوص */
+            user-select: none;
             -webkit-user-select: none;
         }
         
@@ -118,21 +118,23 @@
         }
     </style>
 </head>
-<body oncontextmenu="return false;"> <!-- تعطيل القائمة اليمنى لمنع التفتيش -->
+<body oncontextmenu="return false;">
 
     <!-- شاشة تسجيل الدخول -->
     <div id="loginScreen" class="login-overlay">
         <div class="card p-4 shadow-lg" style="width: 380px; border-radius: 12px;">
             <h3 class="text-center mb-3 fw-bold text-primary"><i class="fa-solid fa-shield-halved me-2"></i>تسجيل الدخول الآمن</h3>
-            <div class="mb-3">
-                <label class="form-label">اسم المستخدم</label>
-                <input type="text" id="loginUser" class="form-control" placeholder="اسم المستخدم" value="admin">
-            </div>
-            <div class="mb-3">
-                <label class="form-label">كلمة المرور</label>
-                <input type="password" id="loginPass" class="form-control" placeholder="••••••••" value="123456">
-            </div>
-            <button class="btn btn-primary w-100 fw-bold py-2" onclick="handleLogin()">دخول للنظام</button>
+            <form onsubmit="handleLogin(event)">
+                <div class="mb-3">
+                    <label class="form-label">اسم المستخدم</label>
+                    <input type="text" id="loginUser" class="form-control" placeholder="اسم المستخدم" value="admin" required>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">كلمة المرور</label>
+                    <input type="password" id="loginPass" class="form-control" placeholder="••••••••" value="123456" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">دخول للنظام</button>
+            </form>
         </div>
     </div>
 
@@ -380,20 +382,20 @@
                         </div>
                     </div>
 
-                    <div class="summary-box">
+                    <div class="summary-box mt-3">
                         <h6 class="fw-bold text-center border-bottom pb-2 mb-3 bg-light py-2 rounded"><i class="fa-solid fa-calculator me-2"></i>ملخص وإجماليات الخزينة</h6>
                         
-                        <div class="summary-row-vertical bg-success bg-opacity-10 border border-success">
+                        <div class="summary-row-vertical bg-success bg-opacity-10 border border-success p-2 rounded mb-2 d-flex justify-content-between">
                             <span class="fw-bold text-success fs-6"><i class="fa-solid fa-circle-arrow-down me-2"></i>إجمالي المقبوضات (الوارد):</span>
                             <span id="sumInTotal" class="fw-bold fs-5 text-success">0</span>
                         </div>
 
-                        <div class="summary-row-vertical bg-danger bg-opacity-10 border border-danger">
+                        <div class="summary-row-vertical bg-danger bg-opacity-10 border border-danger p-2 rounded mb-2 d-flex justify-content-between">
                             <span class="fw-bold text-danger fs-6"><i class="fa-solid fa-circle-arrow-up me-2"></i>إجمالي المدفوعات (المنصرف):</span>
                             <span id="sumOutTotal" class="fw-bold fs-5 text-danger">0</span>
                         </div>
 
-                        <div class="summary-row-vertical bg-primary bg-opacity-10 border border-primary my-2">
+                        <div class="summary-row-vertical bg-primary bg-opacity-10 border border-primary p-2 rounded my-2 d-flex justify-content-between">
                             <span class="fw-bold text-primary fs-6"><i class="fa-solid fa-scale-balanced me-2"></i>الفرق بينهما (صافي الخزينة الكلي):</span>
                             <span id="netDiffTotal" class="fw-bold fs-4 text-primary">0</span>
                         </div>
@@ -676,7 +678,6 @@
         }
 
         // --- 🔒 دالة التشفير وفك التشفير الآمن للبيانات المخزنة ---
-        const SECURE_SALT = 'MasterTreasury_2026_SecureKey#';
         function encryptData(obj) {
             try {
                 const str = JSON.stringify(obj);
@@ -721,9 +722,33 @@
         document.getElementById('filterStartDate').value = todayDateStr;
         document.getElementById('filterEndDate').value = todayDateStr;
 
-        function handleLogin() {
-            const u = sanitizeInput(document.getElementById('loginUser').value.trim());
-            const p = sanitizeInput(document.getElementById('loginPass').value.trim());
+        function handleLogin(event) {
+            if (event) event.preventDefault();
+            
+            const userInput = document.getElementById('loginUser');
+            const passInput = document.getElementById('loginPass');
+            
+            if (!userInput || !passInput) return;
+
+            const u = sanitizeInput(userInput.value.trim());
+            const p = sanitizeInput(passInput.value.trim());
+
+            // تحقق رئيسي للحساب الافتراضي للأدمن
+            if (u === "admin" && p === "123456") {
+                currentUser = { username: "admin", pass: "123456", role: "admin" };
+                document.getElementById('loginScreen').style.display = 'none';
+                document.getElementById('userInfoDisplay').innerText = `المستخدم الحالي: ${currentUser.username} (مدير - صلاحية كاملة)`;
+                document.getElementById('adminSafeSelectorGroup').style.display = 'block';
+                document.getElementById('dashUserMgmtCard').style.display = 'block';
+                document.getElementById('dashTrashCard').style.display = 'block';
+                updateSafeSelector();
+                loadCompanySettings();
+                loadCategories();
+                renderUsersList();
+                showDashboardView();
+                return;
+            }
+
             const found = users.find(x => x.username === u && x.pass === p);
 
             if (found) {
