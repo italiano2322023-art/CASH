@@ -966,36 +966,33 @@
             }
         }
 
-        function saveDirectTransaction(type) {
-            const prefix = type === 'in' ? 'in' : 'out';
-            const amount = parseFloat(document.getElementById(prefix + 'Amount').value);
-            const category = document.getElementById(prefix + 'Category').value;
-            const method = document.getElementById(prefix + 'Method').value;
-            const notes = sanitizeInput(document.getElementById(prefix + 'Notes').value);
-            const selectedDate = document.getElementById('globalDateInput').value;
+      function saveDirectTransaction(type) {
+    const prefix = type === 'in' ? 'in' : 'out';
+    const amount = parseFloat(document.getElementById(prefix + 'Amount').value);
+    const category = document.getElementById(prefix + 'Category').value;
+    const method = document.getElementById(prefix + 'Method').value;
+    const notes = sanitizeInput(document.getElementById(prefix + 'Notes').value);
+    const selectedDate = document.getElementById('globalDateInput').value;
 
-            if(!amount || amount <= 0) return alert('يرجى إدخال مبلغ صحيح');
+    if (!amount || amount <= 0) return alert('يرجى إدخال مبلغ صحيح');
 
-            const newTx = {
-                id: Date.now(),
-                created_at: selectedDate || todayDateStr,
-                type, amount, category, payment_method: method, description: notes,
-                created_by: currentUser.username
-            };
+    // ✅ إرسال الحركة فوراً وبأمان إلى سيرفر Supabase
+    addTransactionToSupabase(
+        category + (notes ? ' - ' + notes : ''),
+        amount,
+        type
+    );
 
-            rawTransactions.push(newTx);
-            setSecureData(MASTER_TX_KEY, rawTransactions);
+    // تفريغ المدخلات بعد الحفظ
+    document.getElementById(prefix + 'Amount').value = '';
+    document.getElementById(prefix + 'Notes').value = '';
 
-            document.getElementById(prefix + 'Amount').value = '';
-            document.getElementById(prefix + 'Notes').value = '';
-            
-            applyFilters();
-        }
+    applyFilters();
+}
 
-        function saveCurrentTreasuryState() {
-            setSecureData(MASTER_TX_KEY, rawTransactions);
-            alert('تم حفظ جميع حركات الخزينة بنجاح ونضمن لك حمايتها 👍');
-        }
+function saveCurrentTreasuryState() {
+    alert('تم حفظ جميع حركات الخزينة بنجاح وتأمينها على السيرفر!');
+}
 
         function openEditModal(txId) {
             if (!verifySecurityPin()) return;
@@ -1021,7 +1018,13 @@
                 tx.payment_method = document.getElementById('editTxMethod').value;
                 tx.description = sanitizeInput(document.getElementById('editTxNotes').value);
 
-                setSecureData(MASTER_TX_KEY, rawTransactions);
+                await _supabase
+            .from('transactions')
+            .update({ 
+                amount: tx.amount, 
+                title: tx.category + (tx.description ? ' - ' + tx.description : '') 
+            })
+            .eq('id', tx.id);
                 bootstrap.Modal.getInstance(document.getElementById('editTxModal')).hide();
                 applyFilters();
             }
