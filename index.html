@@ -1328,5 +1328,74 @@
             applyFilters();
         }
     </script>
+    
+    <!-- استدعاء مكتبة Supabase -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+<script>
+    // تهيئة الاتصال بـ Supabase
+    const SUPABASE_URL = 'https://ugjtpdimyzaovtuknalt.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVnanRwZGlteXphb3Z0dWtuYWx0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTAxODE4MTIsImV4cCI6MjEwNTc1NzgxMn0.6fy7uyqRDa3WTE19Ov01XtabBg_wfNhpHQZ6q-OATes';
+
+    const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+</script>
+<!-- 3. دوال التعامل مع البيانات (توضع بعد التهيئة) -->
+    <script>
+        // دالة إضافة حركة جديدة إلى السيرفر
+        async function addTransactionToSupabase(title, amount, type) {
+            const { data, error } = await _supabase
+                .from('transactions')
+                .insert([
+                    { title: title, amount: parseFloat(amount), type: type }
+                ]);
+
+            if (error) {
+                alert("حدث خطأ أثناء الحفظ: " + error.message);
+            } else {
+                alert("تم الحفظ بنجاح على السيرفر!");
+                loadTransactionsFromSupabase();
+            }
+        }
+
+        // دالة جلب البيانات من السيرفر
+        async function loadTransactionsFromSupabase() {
+            const { data, error } = await _supabase
+                .from('transactions')
+                .select('*')
+                .order('created_at', { ascending: false });
+
+            if (error) {
+                console.error("خطأ في جلب البيانات:", error.message);
+                return;
+            }
+
+            console.log("البيانات المحفوظة من السيرفر:", data);
+        }
+    </script>
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 </body>
 </html>
