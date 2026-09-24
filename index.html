@@ -1009,7 +1009,7 @@ function saveCurrentTreasuryState() {
             editModal.show();
         }
 
-        function saveTransactionEdit() {
+        async function saveTransactionEdit() {
             const id = parseInt(document.getElementById('editTxId').value);
             const tx = rawTransactions.find(x => x.id === id);
             if(tx) {
