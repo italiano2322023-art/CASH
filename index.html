@@ -20,6 +20,8 @@
             font-size: 14px;
             user-select: none;
             -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
         }
         
         .pay-vodafone { color: var(--vodafone-red) !important; font-weight: bold; }
@@ -120,18 +122,18 @@
 </head>
 <body oncontextmenu="return false;">
 
-    <!-- شاشة تسجيل الدخول -->
+    <!-- شاشة تسجيل الدخول الخالية من البيانات الحساسة المسبقة -->
     <div id="loginScreen" class="login-overlay">
         <div class="card p-4 shadow-lg" style="width: 380px; border-radius: 12px;">
             <h3 class="text-center mb-3 fw-bold text-primary"><i class="fa-solid fa-shield-halved me-2"></i>تسجيل الدخول الآمن</h3>
             <form onsubmit="handleLogin(event)">
                 <div class="mb-3">
-                    <label class="form-label">اسم المستخدم</label>
-                    <input type="text" id="loginUser" class="form-control" placeholder="اسم المستخدم" value="admin" required>
+                    <label class="form-label fw-bold">اسم المستخدم</label>
+                    <input type="text" id="loginUser" class="form-control" placeholder="أدخل اسم المستخدم" autocomplete="off" required>
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">كلمة المرور</label>
-                    <input type="password" id="loginPass" class="form-control" placeholder="••••••••" value="123456" required>
+                    <label class="form-label fw-bold">كلمة المرور</label>
+                    <input type="password" id="loginPass" class="form-control" placeholder="••••••••" autocomplete="new-password" required>
                 </div>
                 <button type="submit" class="btn btn-primary w-100 fw-bold py-2">دخول للنظام</button>
             </form>
@@ -418,7 +420,7 @@
         </div>
     </div>
 
-    <!-- مودال الفلتر والبحث في الخزن السابقة -->
+    <!-- مودال الفلتر والبحث -->
     <div class="modal fade" id="filterModal" tabindex="-1">
         <div class="modal-dialog modal-xl">
             <div class="modal-content">
@@ -486,7 +488,7 @@
         </div>
     </div>
 
-    <!-- مودال إعدادات الشركة وكلمة سر الأمان -->
+    <!-- مودال إعدادات الشركة -->
     <div class="modal fade" id="companySettingsModal" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -659,14 +661,22 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
-        // --- 🔒 حظر اختصارات وأدوات الهكر والتفتيش (Anti-Developer Tools) ---
+        // --- 🔒 حظر شاشة التفتيش F12 وأدوات المطور لمنع إظهار الكود ---
         document.addEventListener('keydown', function (e) {
+            // F12, Ctrl+Shift+I, Ctrl+Shift+J, Ctrl+U, Ctrl+Shift+C
             if (e.key === 'F12' || 
                 (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
-                (e.ctrlKey && (e.key === 'U' || e.key === 'u'))) {
+                (e.ctrlKey && (e.key === 'U' || e.key === 'u' || e.key === 'S' || e.key === 's'))) {
                 e.preventDefault();
+                e.stopPropagation();
                 return false;
             }
+        });
+
+        // حظر النقر بزر الفأرة الأيمن في كل الشاشات
+        document.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+            return false;
         });
 
         // --- 🔒 دالة التطهير الحصينة لحظر إدخال الأكواد الخبيثة (Anti-XSS Clean) ---
@@ -733,6 +743,11 @@
             const u = sanitizeInput(userInput.value.trim());
             const p = sanitizeInput(passInput.value.trim());
 
+            if (!u || !p) {
+                alert('⚠️ يرجى إدخال اسم المستخدم وكلمة المرور أولاً');
+                return;
+            }
+
             // تحقق رئيسي للحساب الافتراضي للأدمن
             if (u === "admin" && p === "123456") {
                 currentUser = { username: "admin", pass: "123456", role: "admin" };
@@ -746,6 +761,10 @@
                 loadCategories();
                 renderUsersList();
                 showDashboardView();
+                
+                // تفريغ المدخلات لأمان أعلى
+                userInput.value = '';
+                passInput.value = '';
                 return;
             }
 
@@ -771,6 +790,9 @@
                 loadCategories();
                 renderUsersList();
                 showDashboardView();
+                
+                userInput.value = '';
+                passInput.value = '';
             } else {
                 alert('❌ اسم المستخدم أو كلمة المرور غير صحيحة!');
             }
